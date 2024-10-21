@@ -90,6 +90,9 @@ public class AsteroidGame extends Application {
                     // Move spaceship
                     moveSpaceship();
 
+                    // Handle screen edges (wrapping) for both spaceship and asteroids
+                    handleScreenEdges(canvas);
+
                     // Draw spaceship as a triangle
                     drawSpaceship(gc);
 
@@ -138,7 +141,7 @@ public class AsteroidGame extends Application {
                             asteroidPoints = 3;  // 3 points for large asteroid
                         }
 
-                        asteroids.add(new Asteroid(random.nextInt((int) canvas.getWidth()), 0, speed, asteroidSize, asteroidPoints));
+                        asteroids.add(new Asteroid(random.nextInt((int) canvas.getWidth()), 0, speed, asteroidSize, asteroidPoints, false));
                     }
 
                     // Update and draw asteroids
@@ -187,6 +190,7 @@ public class AsteroidGame extends Application {
         }.start();
     }
 
+
     private void drawSpaceship(GraphicsContext gc) {
         gc.save();
         gc.translate(spaceshipX + 10, spaceshipY + 10);  // Center the rotation
@@ -220,31 +224,71 @@ public class AsteroidGame extends Application {
         }
     }
 
-    private void checkCollisions() {
-        // Check collision between spaceship and asteroids
+    private void handleScreenEdges(Canvas canvas) {
+        // Screen wrapping for spaceship
+        if (spaceshipX < 0) spaceshipX = canvas.getWidth();
+        if (spaceshipX > canvas.getWidth()) spaceshipX = 0;
+        if (spaceshipY < 0) spaceshipY = canvas.getHeight();
+        if (spaceshipY > canvas.getHeight()) spaceshipY = 0;
+
+        // Screen wrapping for asteroids
         for (Asteroid asteroid : asteroids) {
-            if (Math.hypot(spaceshipX - asteroid.getX(), spaceshipY - asteroid.getY()) < asteroid.getSize()) {
+            if (asteroid.getX() < 0) asteroid.setX(canvas.getWidth());
+            if (asteroid.getX() > canvas.getWidth()) asteroid.setX(0);
+            if (asteroid.getY() < 0) asteroid.setY(canvas.getHeight());
+            if (asteroid.getY() > canvas.getHeight()) asteroid.setY(0);
+        }
+    }
+
+
+
+    private void checkCollisions() {
+        List<Bullet> bulletsToRemove = new ArrayList<>();
+        List<Asteroid> asteroidsToRemove = new ArrayList<>();
+
+        // Check for collisions between spaceship and asteroids
+        for (Asteroid asteroid : asteroids) {
+            double distanceToAsteroid = Math.hypot(spaceshipX - asteroid.getX(), spaceshipY - asteroid.getY());
+            if (distanceToAsteroid < (asteroid.getSize() / 2 + 15)) { // 15 is an approximate radius of the spaceship
+                // Collision detected
                 lives--;  // Lose a life
-                hitSound.play();  // Play hit sound when colliding with asteroid
-                asteroids.remove(asteroid);
+                asteroidsToRemove.add(asteroid);  // Mark asteroid for removal
+                hitSound.play();  // Play hit sound
+                if (lives <= 0) {
+                    gameOver = true;
+                    explodeSound.play();  // Play explosion sound when game is over
+                }
                 break;
             }
         }
 
-        // Check collision between bullets and asteroids
-        Iterator<Bullet> bulletIterator = bullets.iterator();
-        while (bulletIterator.hasNext()) {
-            Bullet bullet = bulletIterator.next();
+        // Check for collisions between bullets and asteroids
+        for (Bullet bullet : bullets) {
             for (Asteroid asteroid : asteroids) {
-                if (Math.hypot(bullet.getX() - asteroid.getX(), bullet.getY() - asteroid.getY()) < asteroid.getSize()) {
-                    score += asteroid.getPoints();  // Increase score based on asteroid size
-                    bulletIterator.remove();
-                    asteroids.remove(asteroid);
+                double distanceToBullet = Math.hypot(bullet.getX() - asteroid.getX(), bullet.getY() - asteroid.getY());
+                if (distanceToBullet < asteroid.getSize() / 2) {
+                    // Add points for asteroid size
+                    score += asteroid.getPoints();
+
+                    // Split the asteroid if possible
+                    List<Asteroid> newAsteroids = asteroid.split();
+                    asteroids.addAll(newAsteroids);
+
+                    // Mark the bullet and asteroid for removal
+                    bulletsToRemove.add(bullet);
+                    asteroidsToRemove.add(asteroid);
                     break;
                 }
             }
         }
+
+        // Remove the bullets and asteroids after iteration to avoid ConcurrentModificationException
+        bullets.removeAll(bulletsToRemove);
+        asteroids.removeAll(asteroidsToRemove);
     }
+
+
+
 
     private void restartGame() {
         // Reset game variables

@@ -3,6 +3,8 @@ package se233.asterioddemo;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 public class Asteroid {
@@ -15,13 +17,15 @@ public class Asteroid {
     private int numVertices;
 
     private double direction;
+    private boolean isSplit;  // Track whether this asteroid is a result of a split
 
-    public Asteroid(double x, double y, double speed, double size, int points) {
+    public Asteroid(double x, double y, double speed, double size, int points, boolean isSplit) {
         this.x = x;
         this.y = y;
         this.speed = speed;
         this.size = size;
         this.points = points;
+        this.isSplit = isSplit;
 
         // Randomize the direction of movement
         this.direction = Math.random() * 2 * Math.PI;
@@ -60,8 +64,16 @@ public class Asteroid {
         return x;
     }
 
+    public void setX(double x) {  // Added setter for x position
+        this.x = x;
+    }
+
     public double getY() {
         return y;
+    }
+
+    public void setY(double y) {  // Added setter for y position
+        this.y = y;
     }
 
     public double getSize() {
@@ -82,5 +94,22 @@ public class Asteroid {
         gc.strokePolygon(xPoints, yPoints, numVertices);
         gc.restore();
     }
-}
 
+    // Method to split an asteroid into two smaller pieces
+    public List<Asteroid> split() {
+        List<Asteroid> smallerAsteroids = new ArrayList<>();
+        if (size > 20) {  // Define a threshold for splitting
+            double newSize = size / 2;
+            int newPoints = points / 2;
+
+            // Create two smaller asteroids
+            smallerAsteroids.add(new Asteroid(x, y, speed * 1.2, newSize, newPoints, true));
+            smallerAsteroids.add(new Asteroid(x, y, speed * 1.2, newSize, newPoints, true));
+        }
+        return smallerAsteroids;
+    }
+
+    public boolean isSplit() {
+        return isSplit;
+    }
+}
