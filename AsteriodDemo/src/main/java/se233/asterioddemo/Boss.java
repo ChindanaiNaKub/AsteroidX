@@ -4,6 +4,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 
 public class Boss extends Character{
@@ -52,6 +53,7 @@ public class Boss extends Character{
 
     public void takeDamage() {
         health -= 10;  // Reduce health by 10 for each hit
+        Logger.getLogger(Boss.class.getName()).info("Boss took damage. Current health: " + health);
     }
 
     public int getHealth() {

@@ -31,6 +31,44 @@ public class LevelManager {
     public void checkCollisions(GameState gameState, PlayerShip playerShip, AudioClip hitSound, AudioClip explodeSound, Logger logger) {
         List<Bullet> bulletsToRemove = new ArrayList<>();
         List<Asteroid> asteroidsToRemove = new ArrayList<>();
+        List<Bullet> bossBulletsToRemove = new ArrayList<>();
+
+        // Check for collisions between player bullets and the boss
+        if (boss != null) {
+            for (Bullet bullet : bullets) {
+                if (Math.hypot(bullet.getX() - boss.getX(), bullet.getY() - boss.getY()) < boss.getSize() / 2) {
+                    // Bullet hit the boss
+                    boss.takeDamage();
+                    bulletsToRemove.add(bullet); // Remove the bullet
+                    logger.info("Boss hit! Boss health: " + boss.getHealth());
+
+                    if (boss.getHealth() <= 0) {
+                        // Boss defeated
+                        logger.info("Boss defeated!");
+                        boss = null;  // Remove the boss
+                        setBossActive(false);  // Mark the boss as inactive
+                        gameState.addScore(100);  // Add score for defeating the boss
+                    }
+                }
+            }
+
+            // Check for collisions between boss bullets and player ship
+            if (boss != null){
+                for (Bullet bossBullet : boss.getBossBullets()) {
+                    if (Math.hypot(bossBullet.getX() - playerShip.getX(), bossBullet.getY() - playerShip.getY()) < playerShip.getSize() / 2) {
+                        // Player hit by boss bullet
+                        playerShip.reduceHealth(20); // Reduce player health
+                        bossBulletsToRemove.add(bossBullet);  // Remove boss bullet
+                        logger.info("Player hit by boss bullet! Player health: " + playerShip.getHealth());
+
+                        if (playerShip.getHealth() <= 0) {
+                            // Trigger game over if player health is 0
+                            explodeSound.play();  // Play explosion sound
+                        }
+                    }
+                }
+            }
+        }
 
         // Check for collisions between playerShip and asteroids
         for (Asteroid asteroid : asteroids) {
@@ -71,7 +109,11 @@ public class LevelManager {
         // Remove the bullets and asteroids after iteration to avoid ConcurrentModificationException
         bullets.removeAll(bulletsToRemove);
         asteroids.removeAll(asteroidsToRemove);
+        if (boss != null) {
+            boss.getBossBullets().removeAll(bossBulletsToRemove);
+        }
     }
+
 
     // Spawn asteroids for the level
     public void spawnAsteroidsForLevel(int level, GraphicsContext gc) {
@@ -125,6 +167,11 @@ public class LevelManager {
             }
         }
     }
+    public void clearBossBullets() {
+        if (boss != null) {
+            boss.getBossBullets().clear();
+        }
+    }
 
     // Add a bullet to the list
     public void addBullet(Bullet bullet) {
@@ -152,6 +199,7 @@ public class LevelManager {
     }
     public void setBossActive(boolean isActive) {
         this.bossActive = isActive;
+
     }
 
 

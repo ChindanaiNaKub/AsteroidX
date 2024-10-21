@@ -4,12 +4,20 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 
 public class PlayerShip extends Character {
-
+    private int health = 100;
     private double angle;
 
     public PlayerShip(double x, double y, double speed, double size) {
         super(x, y, speed, size);
         this.angle = 0;
+        this.health = 100;  // Set initial health to 100
+    }
+
+    public void reduceHealth(int amount) {
+        this.health -= amount;
+        if (this.health < 0) {
+            this.health = 0;  // Cap minimum health at 0
+        }
     }
 
     public void reset(double startX, double startY, double startSpeed) {
@@ -45,6 +53,18 @@ public class PlayerShip extends Character {
         double[] yPoints = {-15, 10, 10};
         gc.fillPolygon(xPoints, yPoints, 3);
         gc.restore();
+    }
+
+    public void takeDamage() {
+        health -= 10;
+    }
+
+    public int getHealth() {
+        return health;
+    }
+
+    public void resetHealth() {
+        health = 100;
     }
 
     public void rotateLeft() {

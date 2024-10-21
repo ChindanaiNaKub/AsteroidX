@@ -236,6 +236,7 @@ public class AsteroidGame extends Application {
         gc.fillText("Score: " + gameState.getScore(), 20, 30);
         gc.fillText("Lives: " + gameState.getLives(), 20, 60);
         gc.fillText("Level: " + gameState.getLevel(), 20, 90);
+        gc.fillText("Player Health: " + playerShip.getHealth(), 20, 120);
     }
 
     private void triggerGameOver() {
@@ -270,9 +271,14 @@ public class AsteroidGame extends Application {
     private void restartGame() {
         gameState.reset();
         levelManager.clearAsteroids();
+        levelManager.setBossActive(false);  // Reset boss flag
+        boss = null;  // Reset the boss instance
+        cheatModeActivated = false;  // Reset cheat mode
         levelManager.spawnAsteroidsForLevel(gameState.getLevel(), gc);
         playerShip.reset(400, 300, 5); // Reset spaceship position
         gameOver = false;
         logger.info("Game restarted.");
     }
+
+
 }
