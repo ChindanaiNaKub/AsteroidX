@@ -149,10 +149,10 @@ public class AsteroidGame extends Application {
                         if (asteroid.isOffScreen(canvas.getWidth(), canvas.getHeight())) {
                             asteroidIterator.remove();
                         } else {
-                            gc.setFill(Color.GRAY);
-                            gc.fillOval(asteroid.getX(), asteroid.getY(), asteroid.getSize(), asteroid.getSize());
+                            asteroid.draw(gc); // Use the draw method to display the polygon asteroid
                         }
                     }
+
 
                     // Collision detection
                     checkCollisions();
