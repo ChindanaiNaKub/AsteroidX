@@ -5,6 +5,7 @@ import javafx.scene.paint.Color;
 import java.util.ArrayList;
 import java.util.List;
 
+
 public class Boss extends Character{
     private double x, y;
     private double speed;
@@ -14,15 +15,18 @@ public class Boss extends Character{
 
     public Boss(double x, double y, double speed, double size) {
         super(x, y, speed, size);
-        this.health = 100;  // Set the boss health
+        this.x = x;  // Correctly initialize position
+        this.y = y;
+        this.size = size;
+        this.speed = speed;
+        this.health = 100;
         this.bossBullets = new ArrayList<>();
     }
 
     public void move() {
-        // Simple back-and-forth horizontal movement for the boss
         x += speed;
-        if (x > 800 - size || x < size) {
-            speed = -speed;  // Change direction when hitting the screen edge
+        if (x > 800 - size || x < 0) {
+            speed = -speed; // Switch direction when hitting edges
         }
     }
 
@@ -43,6 +47,8 @@ public class Boss extends Character{
         gc.setFill(Color.RED);
         gc.fillRect(x - size / 2, y - size - 10, size * (health / 100.0), 5);  // Health bar
     }
+
+
 
     public void takeDamage() {
         health -= 10;  // Reduce health by 10 for each hit

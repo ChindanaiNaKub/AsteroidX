@@ -12,6 +12,22 @@ public class PlayerShip extends Character {
         this.angle = 0;
     }
 
+    public void reset(double startX, double startY, double startSpeed) {
+        this.x = startX;
+        this.y = startY;
+        this.speed = startSpeed;
+        this.angle = 0; // Reset angle to the initial position
+    }
+
+
+    public void handleScreenEdges(double screenWidth, double screenHeight) {
+        if (x < 0) x = screenWidth;
+        if (x > screenWidth) x = 0;
+        if (y < 0) y = screenHeight;
+        if (y > screenHeight) y = 0;
+    }
+
+
     @Override
     public void move() {
         // Movement logic for the spaceship
@@ -42,5 +58,9 @@ public class PlayerShip extends Character {
     public void thrustForward() {
         x += Math.cos(angle) * speed;
         y += Math.sin(angle) * speed;
+    }
+    // Add this method to get the angle for bullet firing
+    public double getAngle() {
+        return angle;
     }
 }
