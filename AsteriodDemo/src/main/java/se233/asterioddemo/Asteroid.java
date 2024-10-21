@@ -9,7 +9,9 @@ import java.util.Random;
 
 public class Asteroid {
 
-    private double x, y, size;
+    double x;
+    double y;
+    public double size;
     private double speed;
     private int points;  // Points for destroying the asteroid
     private double[] xPoints;

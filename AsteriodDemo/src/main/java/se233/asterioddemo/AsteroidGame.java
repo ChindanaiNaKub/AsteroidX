@@ -24,16 +24,22 @@ public class AsteroidGame extends Application {
     private double spaceshipAngle = 0;
     private double spaceshipSpeed = 5;
     private boolean left, right, up, down, shooting, gameOver;
+    private boolean cheatMode = false;  // Cheat mode flag
     private List<Bullet> bullets = new ArrayList<>();
     private List<Asteroid> asteroids = new ArrayList<>();
     private Random random = new Random();
     private int lives = 3;
     private int score = 0;
+    private int level = 1;  // Track the current level
 
     // Sound effects
     private AudioClip laserSound;
     private AudioClip hitSound;
     private AudioClip explodeSound;
+
+    private boolean bossActive = false;  // To track whether the boss is in play
+    private Boss boss;
+
 
     @Override
     public void start(Stage primaryStage) {
@@ -68,7 +74,10 @@ public class AsteroidGame extends Application {
                 if (event.getCode() == KeyCode.UP) up = true;
                 if (event.getCode() == KeyCode.DOWN) down = true;
                 if (event.getCode() == KeyCode.SPACE) shooting = true;
-            }
+                // Cheat mode activation
+                if (event.getCode() == KeyCode.C) {
+                    cheatMode();
+                }            }
         });
 
         scene.setOnKeyReleased(event -> {
@@ -77,6 +86,7 @@ public class AsteroidGame extends Application {
             if (event.getCode() == KeyCode.UP) up = false;
             if (event.getCode() == KeyCode.DOWN) down = false;
             if (event.getCode() == KeyCode.SPACE) shooting = false;
+            if (event.getCode() == KeyCode.C) cheatMode = false;  // Disable cheat mode on release
         });
 
         new AnimationTimer() {
@@ -89,25 +99,21 @@ public class AsteroidGame extends Application {
                 if (!gameOver) {
                     // Move spaceship
                     moveSpaceship();
-
-                    // Handle screen edges (wrapping) for both spaceship and asteroids
                     handleScreenEdges(canvas);
-
-                    // Draw spaceship as a triangle
                     drawSpaceship(gc);
 
                     // Shooting bullets
                     if (shooting) {
-                        double tipX = spaceshipX + Math.cos(spaceshipAngle) * 15;  // Position at the tip of the spaceship
-                        double tipY = spaceshipY + Math.sin(spaceshipAngle) * 15;
+                        // Calculate the tip of the spaceship to spawn the bullet
+                        double tipOffset = 15;  // Distance from the center to the tip of the spaceship
+                        double bulletStartX = spaceshipX + Math.cos(spaceshipAngle) * tipOffset;  // X position at the tip
+                        double bulletStartY = spaceshipY + Math.sin(spaceshipAngle) * tipOffset;  // Y position at the tip
 
-                        // Add the bullet from the tip of the spaceship
-                        bullets.add(new Bullet(tipX, tipY, spaceshipAngle));
+                        // Add the bullet from the tip of the spaceship with its angle
+                        bullets.add(new Bullet(bulletStartX, bulletStartY, spaceshipAngle));
                         laserSound.play();  // Play laser sound when shooting
                         shooting = false;  // Fire once per space press
                     }
-
-
 
                     // Update and draw bullets
                     Iterator<Bullet> bulletIterator = bullets.iterator();
@@ -122,40 +128,52 @@ public class AsteroidGame extends Application {
                         }
                     }
 
-                    // Spawn asteroids randomly with different sizes and points
-                    if (random.nextDouble() < 0.02) {
-                        double asteroidSize;
-                        int asteroidPoints;
-                        double speed = random.nextDouble() * 2 + 1;  // Random speed between 1 and 3
+                    // Handle regular gameplay if boss is not active
+                    if (!bossActive) {
 
-                        // Randomize asteroid size (small, medium, large)
-                        double sizeType = random.nextDouble();
-                        if (sizeType < 0.33) {
-                            asteroidSize = 20;   // Small
-                            asteroidPoints = 1;  // 1 point for small asteroid
-                        } else if (sizeType < 0.66) {
-                            asteroidSize = 40;   // Medium
-                            asteroidPoints = 2;  // 2 points for medium asteroid
-                        } else {
-                            asteroidSize = 60;   // Large
-                            asteroidPoints = 3;  // 3 points for large asteroid
+                        // Regular asteroid gameplay
+                        if (asteroids.isEmpty() && level == 1) {
+                            spawnAsteroidsForLevel();  // Ensure asteroids are spawned for the level
                         }
 
-                        asteroids.add(new Asteroid(random.nextInt((int) canvas.getWidth()), 0, speed, asteroidSize, asteroidPoints, false));
-                    }
+                        // Update and draw asteroids
+                        spawnAndDrawAsteroids(gc);
 
-                    // Update and draw asteroids
-                    Iterator<Asteroid> asteroidIterator = asteroids.iterator();
-                    while (asteroidIterator.hasNext()) {
-                        Asteroid asteroid = asteroidIterator.next();
-                        asteroid.update();
-                        if (asteroid.isOffScreen(canvas.getWidth(), canvas.getHeight())) {
-                            asteroidIterator.remove();
-                        } else {
-                            asteroid.draw(gc); // Use the draw method to display the polygon asteroid
+                        // Check if all asteroids are cleared and spawn the boss
+                        if (asteroids.isEmpty() && level == 1) {
+                            level++;
+                            boss = new Boss(400, 100, 1.5, 80);  // Create an easier boss
+                            bossActive = true;  // Set boss as active
+                        }
+                    } else {
+                        // Handle boss movement and attacks
+                        boss.move();
+                        boss.attack();
+                        boss.draw(gc);
+
+                        // Draw boss bullets
+                        List<Bullet> bossBullets = boss.getBossBullets();
+                        for (Bullet bullet : bossBullets) {
+                            bullet.update();
+                            gc.setFill(Color.YELLOW);  // Boss bullets are yellow
+                            gc.fillRect(bullet.getX(), bullet.getY(), 5, 5);
+                        }
+
+                        // Check collisions with the boss
+                        Iterator<Bullet> playerBulletIterator = bullets.iterator();
+                        while (playerBulletIterator.hasNext()) {
+                            Bullet bullet = playerBulletIterator.next();
+                            if (Math.hypot(bullet.getX() - boss.getX(), bullet.getY() - boss.getY()) < boss.getSize() / 2) {
+                                playerBulletIterator.remove();
+                                boss.takeDamage();
+                                if (boss.getHealth() <= 0) {
+                                    bossActive = false;  // Boss defeated
+                                    // Handle victory or transition to the next level here
+                                }
+                                break;
+                            }
                         }
                     }
-
 
                     // Collision detection
                     checkCollisions();
@@ -187,19 +205,140 @@ public class AsteroidGame extends Application {
                     explodeSound.play();  // Play explosion sound when game is over
                 }
             }
+
+            // Add this method to ensure asteroids are spawned at the start of the level
+            private void spawnAsteroidsForLevel() {
+                for (int i = 0; i < 5; i++) {  // Spawn only 5 asteroids initially
+                    double asteroidSize;
+                    int asteroidPoints;
+                    double speed = random.nextDouble() * 1.5 + 0.5;  // Reduced speed
+
+                    // Randomize asteroid size
+                    double sizeType = random.nextDouble();
+                    if (sizeType < 0.33) {
+                        asteroidSize = 20;
+                        asteroidPoints = 1;
+                    } else if (sizeType < 0.66) {
+                        asteroidSize = 40;
+                        asteroidPoints = 2;
+                    } else {
+                        asteroidSize = 60;
+                        asteroidPoints = 3;
+                    }
+
+                    asteroids.add(new Asteroid(random.nextInt((int) gc.getCanvas().getWidth()), random.nextInt((int) gc.getCanvas().getHeight()), speed, asteroidSize, asteroidPoints, false));
+                }
+            }
+
+            // Add this method to spawn and draw asteroids
+            private void spawnAndDrawAsteroids(GraphicsContext gc) {
+                Iterator<Asteroid> asteroidIterator = asteroids.iterator();
+                while (asteroidIterator.hasNext()) {
+                    Asteroid asteroid = asteroidIterator.next();
+                    asteroid.update();
+                    if (asteroid.isOffScreen(gc.getCanvas().getWidth(), gc.getCanvas().getHeight())) {
+                        asteroidIterator.remove();
+                    } else {
+                        asteroid.draw(gc); // Use the draw method to display the polygon asteroid
+                    }
+                }
+            }
+
         }.start();
+
+
+
+    }
+
+    // Cheat mode function
+    private void cheatMode() {
+        // Clear all asteroids
+        asteroids.clear();
+
+        // Automatically transition to the boss stage
+        if (!bossActive) {
+            boss = new Boss(400, 100, 1.5, 80);  // Customize boss position, speed, and size as needed
+            bossActive = true;
+            System.out.println("Cheat mode activated: Transitioned to boss stage.");
+        }
+    }
+
+    private void spawnAndDrawAsteroids(GraphicsContext gc) {
+        // Spawn asteroids randomly with different sizes and points
+        if (random.nextDouble() < 0.02) {
+            double asteroidSize;
+            int asteroidPoints;
+            double speed = random.nextDouble() * 2 + 1;  // Random speed between 1 and 3
+
+            // Randomize asteroid size (small, medium, large)
+            double sizeType = random.nextDouble();
+            if (sizeType < 0.33) {
+                asteroidSize = 20;   // Small
+                asteroidPoints = 1;  // 1 point for small asteroid
+            } else if (sizeType < 0.66) {
+                asteroidSize = 40;   // Medium
+                asteroidPoints = 2;  // 2 points for medium asteroid
+            } else {
+                asteroidSize = 60;   // Large
+                asteroidPoints = 3;  // 3 points for large asteroid
+            }
+
+            asteroids.add(new Asteroid(random.nextInt((int) gc.getCanvas().getWidth()), 0, speed, asteroidSize, asteroidPoints, false));
+        }
+
+        // Update and draw asteroids
+        Iterator<Asteroid> asteroidIterator = asteroids.iterator();
+        while (asteroidIterator.hasNext()) {
+            Asteroid asteroid = asteroidIterator.next();
+            asteroid.update();
+            if (asteroid.isOffScreen(gc.getCanvas().getWidth(), gc.getCanvas().getHeight())) {
+                asteroidIterator.remove();
+            } else {
+                asteroid.draw(gc); // Use the draw method to display the polygon asteroid
+            }
+        }
+    }
+
+
+    // Method to spawn asteroids based on the level
+    private void spawnAsteroidsForLevel() {
+        int numAsteroids = level * 5;  // Increase number of asteroids with each level
+        for (int i = 0; i < numAsteroids; i++) {
+            double asteroidSize;
+            int asteroidPoints;
+            double speed = random.nextDouble() * 2 + 1;
+
+            // Randomize asteroid size
+            double sizeType = random.nextDouble();
+            if (sizeType < 0.33) {
+                asteroidSize = 20;
+                asteroidPoints = 1;
+            } else if (sizeType < 0.66) {
+                asteroidSize = 40;
+                asteroidPoints = 2;
+            } else {
+                asteroidSize = 60;
+                asteroidPoints = 3;
+            }
+
+            asteroids.add(new Asteroid(random.nextInt(800), random.nextInt(600), speed, asteroidSize, asteroidPoints, false));
+        }
     }
 
 
     private void drawSpaceship(GraphicsContext gc) {
         gc.save();
-        gc.translate(spaceshipX + 10, spaceshipY + 10);  // Center the rotation
+
+        // Translate to the spaceship's current position
+        gc.translate(spaceshipX, spaceshipY);
+
+        // Rotate the spaceship based on its current angle
         gc.rotate(Math.toDegrees(spaceshipAngle));
 
-        // Draw the spaceship as a yellow triangle with a white outline
+        // Draw the spaceship triangle with its center at (0, 0) since we are already translated
         gc.setFill(Color.YELLOW);
-        double[] xPoints = {0, -10, 10};  // Triangle X coordinates
-        double[] yPoints = {-15, 10, 10};  // Triangle Y coordinates
+        double[] xPoints = {0, -10, 10};  // X points relative to the spaceship's center
+        double[] yPoints = {-15, 10, 10}; // Y points relative to the spaceship's center
         gc.fillPolygon(xPoints, yPoints, 3);
 
         // Draw the outline of the spaceship
@@ -209,6 +348,8 @@ public class AsteroidGame extends Application {
 
         gc.restore();
     }
+
+
 
     private void moveSpaceship() {
         if (left) spaceshipAngle -= 0.05;
@@ -297,8 +438,11 @@ public class AsteroidGame extends Application {
         spaceshipAngle = 0;
         lives = 3;
         score = 0;
+        level = 1;  // Reset to level 1
         bullets.clear();
         asteroids.clear();
         gameOver = false;
+        bossActive = false;  // Reset boss state
+        spawnAsteroidsForLevel();  // Start the first level
     }
 }

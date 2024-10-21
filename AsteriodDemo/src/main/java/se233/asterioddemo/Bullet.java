@@ -1,31 +1,19 @@
 package se233.asterioddemo;
 
-class Bullet {
+public class Bullet {
     private double x, y;
-    private double velocityX, velocityY;
-    private double angle;  // New: the angle at which the bullet is fired
+    private double angle;
     private double speed = 10;
 
-    public Bullet(double x, double y, double angle) {
-        this.x = x;
-        this.y = y;
-        this.angle = angle;  // Store the spaceship angle
+    public Bullet(double startX, double startY, double angle) {
+        this.x = startX;
+        this.y = startY;
+        this.angle = angle;
     }
 
     public void update() {
-        // Move the bullet in the direction of the angle
         x += Math.cos(angle) * speed;
         y += Math.sin(angle) * speed;
-    }
-
-//    public void update() {
-//        // Move bullet in the direction of the angle
-//        x += Math.cos(angle) * speed;
-//        y += Math.sin(angle) * speed;
-//    }
-
-    public boolean isOffScreen(double width, double height) {
-        return x < 0 || x > width || y < 0 || y > height;
     }
 
     public double getX() {
@@ -35,4 +23,9 @@ class Bullet {
     public double getY() {
         return y;
     }
+
+    public boolean isOffScreen(double screenWidth, double screenHeight) {
+        return (x < 0 || x > screenWidth || y < 0 || y > screenHeight);
+    }
 }
+
