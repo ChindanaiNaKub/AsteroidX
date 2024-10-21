@@ -13,10 +13,15 @@ import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import javafx.scene.media.AudioClip;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+
 
 public class AsteroidGame extends Application {
 
@@ -40,9 +45,18 @@ public class AsteroidGame extends Application {
     private boolean bossActive = false;  // To track whether the boss is in play
     private Boss boss;
 
+    private static final Logger logger = Logger.getLogger(AsteroidGame.class.getName());
+
 
     @Override
     public void start(Stage primaryStage) {
+        try (InputStream configFile = AsteroidGame.class.getClassLoader().getResourceAsStream("logging.properties")) {
+            LogManager.getLogManager().readConfiguration(configFile);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        logger.setLevel(Level.FINE);
+
         Pane root = new Pane();
         Canvas canvas = new Canvas(800, 600);
         root.getChildren().add(canvas);
@@ -111,6 +125,7 @@ public class AsteroidGame extends Application {
 
                         // Add the bullet from the tip of the spaceship with its angle
                         bullets.add(new Bullet(bulletStartX, bulletStartY, spaceshipAngle));
+                        logger.info("Bullet fired from position: (" + bulletStartX + ", " + bulletStartY + ")");
                         laserSound.play();  // Play laser sound when shooting
                         shooting = false;  // Fire once per space press
                     }
@@ -202,6 +217,7 @@ public class AsteroidGame extends Application {
                 if (lives <= 0 && !gameOver) {
                     // Set gameOver to true after lives reach 0
                     gameOver = true;
+                    logger.warning("Game Over! Final Score: " + score);
                     explodeSound.play();  // Play explosion sound when game is over
                 }
             }
@@ -352,18 +368,27 @@ public class AsteroidGame extends Application {
 
 
     private void moveSpaceship() {
-        if (left) spaceshipAngle -= 0.05;
-        if (right) spaceshipAngle += 0.05;
+        if (left) {
+            spaceshipAngle -= 0.05;
+            logger.fine("Spaceship turned left. Current angle: " + spaceshipAngle);
+        }
+        if (right) {
+            spaceshipAngle += 0.05;
+            logger.fine("Spaceship turned right. Current angle: " + spaceshipAngle);
+        }
 
         if (up) {
             spaceshipX += Math.cos(spaceshipAngle) * spaceshipSpeed;
             spaceshipY += Math.sin(spaceshipAngle) * spaceshipSpeed;
+            logger.info("Spaceship moved forward. Position: (" + spaceshipX + ", " + spaceshipY + ")");
         }
         if (down) {
             spaceshipX -= Math.cos(spaceshipAngle) * spaceshipSpeed / 2;
             spaceshipY -= Math.sin(spaceshipAngle) * spaceshipSpeed / 2;
+            logger.info("Spaceship moved backward. Position: (" + spaceshipX + ", " + spaceshipY + ")");
         }
     }
+
 
     private void handleScreenEdges(Canvas canvas) {
         // Screen wrapping for spaceship
@@ -410,6 +435,7 @@ public class AsteroidGame extends Application {
                 if (distanceToBullet < asteroid.getSize() / 2) {
                     // Add points for asteroid size
                     score += asteroid.getPoints();
+                    logger.info("Asteroid destroyed! Score: " + score);
 
                     // Split the asteroid if possible
                     List<Asteroid> newAsteroids = asteroid.split();
