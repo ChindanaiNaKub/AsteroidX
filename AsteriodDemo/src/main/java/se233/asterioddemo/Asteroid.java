@@ -1,13 +1,18 @@
 package se233.asterioddemo;
 
-class Asteroid {
+public class Asteroid {
     private double x, y;
-    private double speed = 2;
-    private double size = 30;
+    private double speed;
+    private double size;
+    private int points;  // Points the asteroid awards when destroyed
 
-    public Asteroid(double x, double y) {
+    // Constructor that defines the size (small, medium, large)
+    public Asteroid(double x, double y, double speed, double size, int points) {
         this.x = x;
         this.y = y;
+        this.speed = speed;
+        this.size = size;
+        this.points = points;
     }
 
     public void update() {
@@ -29,5 +34,8 @@ class Asteroid {
     public double getSize() {
         return size;
     }
-}
 
+    public int getPoints() {
+        return points;
+    }
+}
