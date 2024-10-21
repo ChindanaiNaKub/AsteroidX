@@ -91,7 +91,8 @@ public class AsteroidGame extends Application {
                 // Cheat mode activation
                 if (event.getCode() == KeyCode.C) {
                     cheatMode();
-                }            }
+                }
+            }
         });
 
         scene.setOnKeyReleased(event -> {
@@ -251,7 +252,7 @@ public class AsteroidGame extends Application {
                 Iterator<Asteroid> asteroidIterator = asteroids.iterator();
                 while (asteroidIterator.hasNext()) {
                     Asteroid asteroid = asteroidIterator.next();
-                    asteroid.update();
+                    asteroid.move();
                     if (asteroid.isOffScreen(gc.getCanvas().getWidth(), gc.getCanvas().getHeight())) {
                         asteroidIterator.remove();
                     } else {
@@ -306,7 +307,7 @@ public class AsteroidGame extends Application {
         Iterator<Asteroid> asteroidIterator = asteroids.iterator();
         while (asteroidIterator.hasNext()) {
             Asteroid asteroid = asteroidIterator.next();
-            asteroid.update();
+            asteroid.move();
             if (asteroid.isOffScreen(gc.getCanvas().getWidth(), gc.getCanvas().getHeight())) {
                 asteroidIterator.remove();
             } else {

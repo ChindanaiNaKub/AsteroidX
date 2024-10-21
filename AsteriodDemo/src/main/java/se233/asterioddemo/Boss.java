@@ -5,7 +5,7 @@ import javafx.scene.paint.Color;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Boss {
+public class Boss extends Character{
     private double x, y;
     private double speed;
     private double size;
@@ -13,10 +13,7 @@ public class Boss {
     private List<Bullet> bossBullets;
 
     public Boss(double x, double y, double speed, double size) {
-        this.x = x;
-        this.y = y;
-        this.speed = speed;
-        this.size = size;
+        super(x, y, speed, size);
         this.health = 100;  // Set the boss health
         this.bossBullets = new ArrayList<>();
     }

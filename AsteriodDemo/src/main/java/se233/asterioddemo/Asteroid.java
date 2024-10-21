@@ -7,12 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class Asteroid {
+public class Asteroid extends Character {
 
-    double x;
-    double y;
-    public double size;
-    private double speed;
     private int points;  // Points for destroying the asteroid
     private double[] xPoints;
     private double[] yPoints;
@@ -22,10 +18,8 @@ public class Asteroid {
     private boolean isSplit;  // Track whether this asteroid is a result of a split
 
     public Asteroid(double x, double y, double speed, double size, int points, boolean isSplit) {
-        this.x = x;
-        this.y = y;
-        this.speed = speed;
-        this.size = size;
+        // Call the Character constructor to initialize x, y, speed, and size
+        super(x, y, speed, size);
         this.points = points;
         this.isSplit = isSplit;
 
@@ -53,7 +47,9 @@ public class Asteroid {
         }
     }
 
-    public void update() {
+    @Override
+    public void move() {
+        // Move the asteroid based on its direction and speed
         x += Math.cos(direction) * speed;
         y += Math.sin(direction) * speed;
     }
@@ -62,32 +58,9 @@ public class Asteroid {
         return (x < -size || x > screenWidth + size || y < -size || y > screenHeight + size);
     }
 
-    public double getX() {
-        return x;
-    }
-
-    public void setX(double x) {  // Added setter for x position
-        this.x = x;
-    }
-
-    public double getY() {
-        return y;
-    }
-
-    public void setY(double y) {  // Added setter for y position
-        this.y = y;
-    }
-
-    public double getSize() {
-        return size;
-    }
-
-    public int getPoints() {
-        return points;
-    }
-
-    // Draw the asteroid as a polygon
+    @Override
     public void draw(GraphicsContext gc) {
+        // Draw the asteroid as a polygon
         gc.save();
         gc.translate(x, y);
         gc.setFill(Color.GRAY);
@@ -109,6 +82,10 @@ public class Asteroid {
             smallerAsteroids.add(new Asteroid(x, y, speed * 1.2, newSize, newPoints, true));
         }
         return smallerAsteroids;
+    }
+
+    public int getPoints() {
+        return points;
     }
 
     public boolean isSplit() {
