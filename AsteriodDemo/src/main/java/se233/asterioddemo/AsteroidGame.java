@@ -34,6 +34,7 @@ public class AsteroidGame extends Application {
     private AudioClip laserSound;
     private AudioClip hitSound;
     private AudioClip explodeSound;
+    private AudioClip thrustSound;
 
     private boolean asteroidsSpawned = false;
     private boolean cheatModeActivated = false;
@@ -72,6 +73,7 @@ public class AsteroidGame extends Application {
         laserSound = new AudioClip(getClass().getResource("/sounds/laser.m4a").toExternalForm());
         hitSound = new AudioClip(getClass().getResource("/sounds/hit.m4a").toExternalForm());
         explodeSound = new AudioClip(getClass().getResource("/sounds/explode.m4a").toExternalForm());
+        thrustSound = new AudioClip(getClass().getResource("/sounds/thrust.m4a").toExternalForm());
 
         // Spawn asteroids for the first level
         levelManager.spawnAsteroidsForLevel(gameState.getLevel(), gc);
@@ -226,16 +228,22 @@ public class AsteroidGame extends Application {
         if (inputController.isLeftPressed()) playerShip.rotateLeft();
         if (inputController.isRightPressed()) playerShip.rotateRight();
 
+        // Play thrust sound when moving forward
         if (inputController.isUpPressed()) {
             playerShip.thrustForward();
+            if (!thrustSound.isPlaying()) {
+                thrustSound.play();
+            }
         } else {
             playerShip.stopThrusting();  // Stop showing thrust effect when not pressing up
+            thrustSound.stop();  // Stop sound when not pressing thrust
         }
 
         playerShip.move();  // Apply movement changes
         playerShip.draw(gc);  // Draw the ship and the flames (if thrusting)
         playerShip.handleScreenEdges(canvas.getWidth(), canvas.getHeight());
     }
+
 
 
     private void drawUI() {

@@ -104,6 +104,7 @@ public class PlayerShip extends Character {
             velocityX *= MAX_SPEED / Math.sqrt(velocityX * velocityX + velocityY * velocityY);
             velocityY *= MAX_SPEED / Math.sqrt(velocityX * velocityX + velocityY * velocityY);
         }
+
     }
 
     public void stopThrusting() {
