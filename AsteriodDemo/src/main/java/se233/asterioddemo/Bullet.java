@@ -6,7 +6,7 @@ import javafx.scene.paint.Color;
 public class Bullet {
     private double x, y;
     private double angle;
-    private double speed = 10;
+    private double speed = 3;
 
     public Bullet(double startX, double startY, double angle) {
         this.x = startX;
@@ -14,11 +14,18 @@ public class Bullet {
         this.angle = angle;
     }
 
-    // Method to update the bullet's position
-    public void update() {
+    // Update method with screen wrapping logic
+    public void update(double screenWidth, double screenHeight) {
         x += Math.cos(angle) * speed;
         y += Math.sin(angle) * speed;
+
+        // Screen wrapping logic
+        if (x < 0) x = screenWidth;
+        if (x > screenWidth) x = 0;
+        if (y < 0) y = screenHeight;
+        if (y > screenHeight) y = 0;
     }
+
 
     // Draw the bullet on the screen
     public void draw(GraphicsContext gc) {

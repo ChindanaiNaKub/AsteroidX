@@ -105,7 +105,7 @@ public class AsteroidGame extends Application {
             }
 
             // Update and draw bullets (both player and boss bullets)
-            levelManager.updateAndDrawBullets(gc);
+            levelManager.updateAndDrawBullets(gc, canvas.getWidth(), canvas.getHeight());
             drawBossBullets();
             levelManager.updateAndDrawAsteroids(gc);
             drawUI();
@@ -143,7 +143,7 @@ public class AsteroidGame extends Application {
                 // New: Draw boss bullets and check collisions with player
                 List<Bullet> bossBullets = boss.getBossBullets();
                 for (Bullet bullet : bossBullets) {
-                    bullet.update();
+                    bullet.update(canvas.getWidth(), canvas.getHeight());
                     gc.setFill(Color.YELLOW);
                     gc.fillRect(bullet.getX(), bullet.getY(), 5, 5);
 
@@ -179,13 +179,12 @@ public class AsteroidGame extends Application {
         if (boss != null) {  // Check if boss is not null
             List<Bullet> bossBullets = boss.getBossBullets();
             for (Bullet bullet : bossBullets) {
-                bullet.update();  // Update bullet's position
+                bullet.update(canvas.getWidth(), canvas.getHeight());  // Update bullet's position
                 gc.setFill(Color.YELLOW);  // Boss bullets color
                 gc.fillRect(bullet.getX(), bullet.getY(), 5, 5);  // Draw boss bullet
             }
         }
     }
-
 
 
     // New method to handle victory or next level transition
@@ -194,7 +193,6 @@ public class AsteroidGame extends Application {
         gameState.nextLevel();
         logger.info("Victory! Moving to next level.");
     }
-
 
 
     private void fireBullet() {
@@ -213,16 +211,6 @@ public class AsteroidGame extends Application {
 
         logger.info("Bullet fired from position: (" + bulletStartX + ", " + bulletStartY + ")");
     }
-
-
-
-
-
-
-
-
-
-
 
     // Handle collision detection
     private void checkCollisions() {
@@ -283,6 +271,7 @@ public class AsteroidGame extends Application {
     private void restartGame() {
         gameState.reset();
         levelManager.clearAsteroids();
+        levelManager.clearBullets();  // Clear all bullets
         levelManager.setBossActive(false);  // Reset boss flag
         boss = null;  // Reset the boss instance
         cheatModeActivated = false;  // Reset cheat mode

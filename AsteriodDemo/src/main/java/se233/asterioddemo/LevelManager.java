@@ -155,18 +155,20 @@ public class LevelManager {
     }
 
     // Update and draw bullets
-    public void updateAndDrawBullets(GraphicsContext gc) {
+    public void updateAndDrawBullets(GraphicsContext gc, double screenWidth, double screenHeight) {
         Iterator<Bullet> bulletIterator = bullets.iterator();
         while (bulletIterator.hasNext()) {
             Bullet bullet = bulletIterator.next();
-            bullet.update();
-            if (bullet.isOffScreen(gc.getCanvas().getWidth(), gc.getCanvas().getHeight())) {
-                bulletIterator.remove();
-            } else {
-                bullet.draw(gc);
-            }
+            bullet.update(screenWidth, screenHeight);  // Pass the screen dimensions to handle wrapping
+            bullet.draw(gc);
         }
     }
+
+    public void clearBullets() {
+        bullets.clear();  // Clear all bullets when the game is restarted
+    }
+
+
     public void clearBossBullets() {
         if (boss != null) {
             boss.getBossBullets().clear();
