@@ -198,18 +198,30 @@ public class AsteroidGame extends Application {
 
 
     private void fireBullet() {
-        double tipOffset = 15;
-        double bulletStartX = playerShip.getX() + Math.cos(playerShip.getAngle()) * tipOffset;
-        double bulletStartY = playerShip.getY() + Math.sin(playerShip.getAngle()) * tipOffset;
+        // Ship's size should be used for offset from the center to the tip
+        double shipTipOffset = playerShip.getSize() / 2;  // Half of the ship's size
 
-        // Add bullet to LevelManager
-        levelManager.addBullet(new Bullet(bulletStartX, bulletStartY, playerShip.getAngle()));
+        // Adjusting the bullet's start position to be at the tip of the triangle
+        double bulletStartX = playerShip.getX() + Math.cos(playerShip.getAngle() - Math.PI / 2) * shipTipOffset;
+        double bulletStartY = playerShip.getY() + Math.sin(playerShip.getAngle() - Math.PI / 2) * shipTipOffset;
+
+        // Fire the bullet in the direction the ship is facing
+        levelManager.addBullet(new Bullet(bulletStartX, bulletStartY, playerShip.getAngle() - Math.PI / 2));
 
         // Play laser sound
         laserSound.play();
 
         logger.info("Bullet fired from position: (" + bulletStartX + ", " + bulletStartY + ")");
     }
+
+
+
+
+
+
+
+
+
 
 
     // Handle collision detection
