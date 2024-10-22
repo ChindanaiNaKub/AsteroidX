@@ -225,10 +225,18 @@ public class AsteroidGame extends Application {
     private void updatePlayerShip() {
         if (inputController.isLeftPressed()) playerShip.rotateLeft();
         if (inputController.isRightPressed()) playerShip.rotateRight();
-        if (inputController.isUpPressed()) playerShip.thrustForward();
-        playerShip.draw(gc);
+
+        if (inputController.isUpPressed()) {
+            playerShip.thrustForward();
+        } else {
+            playerShip.stopThrusting();  // Stop showing thrust effect when not pressing up
+        }
+
+        playerShip.move();  // Apply movement changes
+        playerShip.draw(gc);  // Draw the ship and the flames (if thrusting)
         playerShip.handleScreenEdges(canvas.getWidth(), canvas.getHeight());
     }
+
 
     private void drawUI() {
         gc.setFill(Color.WHITE);
