@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.logging.Logger;
 import java.util.logging.LogManager;
 
-
 public class AsteroidGame extends Application {
 
     private Canvas canvas;
@@ -100,18 +99,21 @@ public class AsteroidGame extends Application {
         if (!gameOver) {
             updatePlayerShip();
 
-            // Only spawn asteroids once per level
+            // Spawn asteroids and enemies only once per level
             if (!asteroidsSpawned) {
                 levelManager.spawnAsteroidsForLevel(gameState.getLevel(), gc);
+                levelManager.spawnEnemyShipsForLevel(gameState.getLevel());  // Spawn enemies here
                 asteroidsSpawned = true;
             }
 
-            // Update and draw bullets (both player and boss bullets)
+            // Update and draw bullets (player, boss, and enemy)
             levelManager.updateAndDrawBullets(gc, canvas.getWidth(), canvas.getHeight());
-            drawBossBullets();
-            levelManager.updateAndDrawAsteroids(gc);
+            levelManager.updateAndDrawEnemyShips(gc, playerShip.getX(), playerShip.getY());  // Update enemies and handle movement
+            levelManager.updateAndDrawEnemyBullets(gc, canvas.getWidth(), canvas.getHeight()); // Update enemy bullets
+            drawBossBullets();  // Boss bullet logic
+            levelManager.updateAndDrawAsteroids(gc);  // Asteroid logic
             drawUI();
-            checkCollisions();
+            checkCollisions();  // Check collisions
 
             if (gameState.isGameOver()) {
                 triggerGameOver();
@@ -121,10 +123,10 @@ public class AsteroidGame extends Application {
                 fireBullet();
             }
 
-            // If all asteroids are cleared, spawn the boss or move to the next level
-            if (levelManager.areAsteroidsCleared()) {
+            // Spawn boss or move to the next level if all enemies and asteroids are cleared
+            if (levelManager.areAsteroidsCleared() && levelManager.areEnemiesCleared()) {
                 if (!levelManager.isBossActive()) {
-                    if (gameState.getLevel() >= 10 || cheatModeActivated) {  // Show boss if at level 10 or in cheat mode
+                    if (gameState.getLevel() >= 10 || cheatModeActivated) {
                         boss = levelManager.spawnBoss();
                         logger.info("Boss spawned at level: " + gameState.getLevel());
                     } else {
@@ -135,25 +137,23 @@ public class AsteroidGame extends Application {
                 }
             }
 
-            // Update and draw the boss if active
+            // Update and draw boss logic
             if (levelManager.isBossActive() && boss != null) {
                 boss.move();
                 boss.attack();
                 boss.draw(gc);
                 drawBossBullets();
 
-                // New: Draw boss bullets and check collisions with player
+                // Check for collisions with boss bullets
                 List<Bullet> bossBullets = boss.getBossBullets();
                 for (Bullet bullet : bossBullets) {
                     bullet.update(canvas.getWidth(), canvas.getHeight());
                     gc.setFill(Color.YELLOW);
                     gc.fillRect(bullet.getX(), bullet.getY(), 5, 5);
 
-                    // Check if bullet hits the player
                     if (Math.hypot(bullet.getX() - playerShip.getX(), bullet.getY() - playerShip.getY()) < playerShip.getSize() / 2) {
-                        gameState.loseLife();  // Player hit, lose a life
+                        gameState.loseLife();
                         logger.info("Player hit by boss bullet!");
-                        // Handle game over condition
                         if (gameState.isGameOver()) {
                             triggerGameOver();
                         }
@@ -161,11 +161,10 @@ public class AsteroidGame extends Application {
                 }
             }
 
-            // New: Check if boss is defeated
+            // Handle boss defeat logic
             if (boss != null && boss.getHealth() <= 0) {
                 levelManager.setBossActive(false);
                 logger.info("Boss defeated!");
-                // Proceed to next stage or victory screen
                 handleVictory();
             }
 
@@ -176,6 +175,7 @@ public class AsteroidGame extends Application {
             drawGameOver();
         }
     }
+
 
     private void drawBossBullets() {
         if (boss != null) {  // Check if boss is not null
@@ -285,17 +285,20 @@ public class AsteroidGame extends Application {
     }
 
     private void restartGame() {
-        gameState.reset();
-        levelManager.clearAsteroids();
-        levelManager.clearBullets();  // Clear all bullets
+        gameOver = false;  // Reset this early
+        gameState.reset();  // Reset score, level, lives
+        playerShip.reset(400, 300, 5); // Reset spaceship position and health
+        levelManager.clearAsteroids();  // Clear asteroids
+        levelManager.clearBullets();  // Clear bullets
+        levelManager.clearEnemyBullets();
         levelManager.setBossActive(false);  // Reset boss flag
-        boss = null;  // Reset the boss instance
+        boss = null;  // Reset boss instance
+        levelManager.clearEnemyShips();  // Clear enemy ships
         cheatModeActivated = false;  // Reset cheat mode
-        levelManager.spawnAsteroidsForLevel(gameState.getLevel(), gc);
-        playerShip.reset(400, 300, 5); // Reset spaceship position
-        gameOver = false;
+        levelManager.spawnAsteroidsForLevel(gameState.getLevel(), gc);  // Spawn new asteroids
         logger.info("Game restarted.");
     }
+
 
 
 }

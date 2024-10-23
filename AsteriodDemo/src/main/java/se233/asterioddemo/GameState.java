@@ -4,11 +4,13 @@ public class GameState {
     private int score;
     private int lives;
     private int level;
+    private boolean gameOver; // New field for game over state
 
     public GameState() {
         this.score = 0;
         this.lives = 3;
         this.level = 1;
+        this.gameOver = false; // Initialize game over to false
     }
 
     public int getScore() {
@@ -27,10 +29,17 @@ public class GameState {
         if (lives > 0) {
             lives--;
         }
+        if (lives == 0) {
+            setGameOver(true); // Set game over if no lives left
+        }
     }
 
     public boolean isGameOver() {
-        return lives <= 0;
+        return gameOver || lives <= 0; // Check explicit game over or lives
+    }
+
+    public void setGameOver(boolean gameOver) {
+        this.gameOver = gameOver;
     }
 
     public int getLevel() {
@@ -45,5 +54,6 @@ public class GameState {
         this.score = 0;
         this.lives = 3;
         this.level = 1;
+        this.gameOver = false; // Reset game over state
     }
 }
