@@ -14,12 +14,27 @@ public class PlayerShip extends Character {
     private final double DECELERATION = 1.0;  // Friction to slow down over time
     private boolean isThrusting = false;  // Track if the ship is thrusting
     private Image shipImage;
+    private long lastBulletTime = 0;
+    private final long bulletCooldown = 300;
 
     public PlayerShip(double x, double y, double speed, double size) {
         super(x, y, speed, size);
         this.angle = 0;
         this.health = 100;
         this.shipImage = new Image(getClass().getResourceAsStream("/sprite/ship.png"));
+    }
+
+    // Method to fire bullets from the ship
+    public Bullet fireBullet() {
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastBulletTime >= bulletCooldown) {
+            lastBulletTime = currentTime;
+            double shipTipOffset = this.getSize() / 2;
+            double bulletStartX = this.getX() + Math.cos(this.getAngle() - Math.PI / 2) * shipTipOffset;
+            double bulletStartY = this.getY() + Math.sin(this.getAngle() - Math.PI / 2) * shipTipOffset;
+            return new Bullet(bulletStartX, bulletStartY, this.getAngle() - Math.PI / 2);
+        }
+        return null;
     }
 
     public void reduceHealth(int amount) {

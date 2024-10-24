@@ -17,6 +17,8 @@ public class LevelManager {
     private Boss boss;
     private boolean bossActive;
     private Random random;
+    private long lastBulletTime = 0;
+    private final long bulletCooldown = 300;  // Time between bullets in milliseconds
 
     public LevelManager() {
         this.asteroids = new ArrayList<>();
@@ -138,7 +140,7 @@ public class LevelManager {
             double distanceToEnemy = Math.hypot(playerShip.getX() - enemy.getX(), playerShip.getY() - enemy.getY());
             if (distanceToEnemy < (enemy.getSize() / 2 + 15)) {  // Approximate radius of the player ship is 15
                 // Collision detected with an enemy ship
-                gameState.loseLife();  // Lose a life
+                // gameState.loseLife();  // Lose a life
                 enemiesToRemove.add(enemy);  // Remove the enemy after collision
                 hitSound.play();  // Play hit sound
 
