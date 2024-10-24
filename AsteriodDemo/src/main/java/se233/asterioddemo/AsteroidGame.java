@@ -40,6 +40,8 @@ public class AsteroidGame extends Application {
 
     static final Logger logger = Logger.getLogger(AsteroidGame.class.getName());
 
+    private LevelProgressManager levelProgressManager;
+
     @Override
     public void start(Stage primaryStage) {
 
@@ -48,6 +50,8 @@ public class AsteroidGame extends Application {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        levelProgressManager = new LevelProgressManager(8000, logger);
 
         Pane root = new Pane();
         canvas = new Canvas(800, 600);
@@ -114,6 +118,7 @@ public class AsteroidGame extends Application {
             levelManager.updateAndDrawAsteroids(gc);  // Asteroid logic
             drawUI();
             checkCollisions();  // Check collisions
+            levelProgressManager.handleLevelTimeout(gameState, levelManager);  // Check for level time limit
 
             if (gameState.isGameOver()) {
                 triggerGameOver();
@@ -289,6 +294,7 @@ public class AsteroidGame extends Application {
         levelManager.clearEnemyShips();  // Clear enemy ships
         cheatModeActivated = false;  // Reset cheat mode
         levelManager.spawnAsteroidsForLevel(gameState.getLevel(), gc);  // Spawn new asteroids
+        levelProgressManager.resetLevelTimer();  // Reset timer for the new level
         logger.info("Game restarted.");
     }
 
