@@ -1,6 +1,7 @@
 package se233.asterioddemo;
 
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 import java.util.Random;
 
@@ -11,6 +12,14 @@ public class EnemyShip extends Character {
     private long lastShootTime = 0;
     private double changeDirectionTimer = 0;  // Timer to change direction periodically
     private Random random = new Random();
+    private Image sprite;
+
+    // Array of enemy sprites
+    private static final String[] ENEMY_SPRITES = {
+            "/sprite/big_enemy_0.png",
+            "/sprite/big_enemy_1.png",
+            "/sprite/big_enemy_2.png"
+    };
 
     @Override
     public void move() {
@@ -22,6 +31,11 @@ public class EnemyShip extends Character {
     public EnemyShip(double x, double y, double speed, double size, double angle) {
         super(x, y, speed, size);
         this.angle = angle;
+
+        // Load a random sprite for this enemy
+        Random random = new Random();
+        int spriteIndex = random.nextInt(ENEMY_SPRITES.length);
+        sprite = new Image(getClass().getResourceAsStream(ENEMY_SPRITES[spriteIndex]));
     }
 
     public Bullet shoot(double playerX, double playerY) {
@@ -71,16 +85,12 @@ public class EnemyShip extends Character {
         y += Math.sin(angle) * speed;
     }
 
-    // Draw enemy ship on the screen
     @Override
     public void draw(GraphicsContext gc) {
         gc.save();
         gc.translate(x, y);
         gc.rotate(Math.toDegrees(angle));
-        gc.setFill(Color.RED);
-        double[] xPoints = {0, -10, 10};
-        double[] yPoints = {-15, 10, 10};
-        gc.fillPolygon(xPoints, yPoints, 3);
+        gc.drawImage(sprite, -sprite.getWidth() / 2, -sprite.getHeight() / 2, size, size);
         gc.restore();
     }
 
