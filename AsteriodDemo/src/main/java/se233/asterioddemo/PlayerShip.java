@@ -1,6 +1,7 @@
 package se233.asterioddemo;
 
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 
 public class PlayerShip extends Character {
@@ -12,11 +13,13 @@ public class PlayerShip extends Character {
     private final double THRUST = 0.05;  // Power of thrust
     private final double DECELERATION = 1.0;  // Friction to slow down over time
     private boolean isThrusting = false;  // Track if the ship is thrusting
+    private Image shipImage;
 
     public PlayerShip(double x, double y, double speed, double size) {
         super(x, y, speed, size);
         this.angle = 0;
         this.health = 100;
+        this.shipImage = new Image(getClass().getResourceAsStream("/sprite/ship.png"));
     }
 
     public void reduceHealth(int amount) {
@@ -57,14 +60,12 @@ public class PlayerShip extends Character {
         gc.save();
         gc.translate(x, y);
         gc.rotate(Math.toDegrees(angle));
-        gc.setFill(Color.YELLOW);
-        double[] xPoints = {0, -10, 10};
-        double[] yPoints = {-15, 10, 10};
-        gc.fillPolygon(xPoints, yPoints, 3);
+        // Draw the ship image, centered
+        gc.drawImage(shipImage, -shipImage.getWidth() / 2, -shipImage.getHeight() / 2);
 
-        // Draw the thrust flames if thrusting
+        // Draw thrust flames if thrusting
         if (isThrusting) {
-            gc.setFill(Color.RED);
+            gc.setFill(javafx.scene.paint.Color.RED);
             double[] flameXPoints = {0, -7, 7};
             double[] flameYPoints = {12, 25, 25};
             gc.fillPolygon(flameXPoints, flameYPoints, 3);

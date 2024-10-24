@@ -288,6 +288,7 @@ public class AsteroidGame extends Application {
         gameOver = false;  // Reset this early
         gameState.reset();  // Reset score, level, lives
         playerShip.reset(400, 300, 5); // Reset spaceship position and health
+        playerShip.resetHealth();  // Reset player health to 100
         levelManager.clearAsteroids();  // Clear asteroids
         levelManager.clearBullets();  // Clear bullets
         levelManager.clearEnemyBullets();
