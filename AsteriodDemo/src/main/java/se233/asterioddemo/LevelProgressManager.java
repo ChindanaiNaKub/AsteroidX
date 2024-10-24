@@ -21,10 +21,10 @@ public class LevelProgressManager {
         return System.currentTimeMillis() - levelStartTime > levelTimeLimit;
     }
 
-    public void handleLevelTimeout(GameState gameState, LevelManager levelManager) {
+    public void handleLevelTimeout(GameState gameState, GameEntityManager gameEntityManager) {
         if (isTimeLimitReached()) {
             gameState.nextLevel();
-            levelManager.clearEnemyShips();
+            gameEntityManager.clearEnemyShips();
             logger.info("Time limit reached, moving to the next level.");
             resetLevelTimer();
         }

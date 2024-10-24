@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.logging.Logger;
 
-public class LevelManager {
+public class GameEntityManager {
     private List<Asteroid> asteroids;
     private List<Bullet> bullets;  // List to store bullets
     private List<EnemyShip> enemyShips;  // Enemy ships list
@@ -20,7 +20,7 @@ public class LevelManager {
     private long lastBulletTime = 0;
     private final long bulletCooldown = 300;  // Time between bullets in milliseconds
 
-    public LevelManager() {
+    public GameEntityManager() {
         this.asteroids = new ArrayList<>();
         this.bullets = new ArrayList<>();  // Initialize bullets list
         this.enemyShips = new ArrayList<>();  // Initialize enemy ship list
