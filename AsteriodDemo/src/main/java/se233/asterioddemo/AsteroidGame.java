@@ -96,16 +96,7 @@ public class AsteroidGame extends Application {
         scene.setOnMouseClicked(event -> {
             if (gameOver) {
                 restartGame();
-            } else {
-                fireBullet();
             }
-        });
-
-        // Handle mouse movement to rotate player ship
-        scene.setOnMouseMoved(event -> {
-            double mouseX = event.getX();
-            double mouseY = event.getY();
-            playerShip.rotateToMouse(mouseX, mouseY);
         });
     }
 
@@ -134,6 +125,10 @@ public class AsteroidGame extends Application {
 
             if (gameState.isGameOver()) {
                 triggerGameOver();
+            }
+
+            if (inputController.isShootingPressed()) {
+                fireBullet();
             }
 
             // Spawn boss or move to the next level if all enemies and asteroids are cleared
@@ -227,26 +222,26 @@ public class AsteroidGame extends Application {
     }
 
     private void updatePlayerShip() {
-        // Rotate to follow the mouse cursor
-        double mouseX = inputController.getMouseX();
-        double mouseY = inputController.getMouseY();
-        playerShip.rotateToMouse(mouseX, mouseY);
-
-        // Move left or right without affecting rotation
-        if (inputController.isLeftPressed()) playerShip.moveLeft();
-        if (inputController.isRightPressed()) playerShip.moveRight();
-
-        // Move up or down
-        if (inputController.isUpPressed()) playerShip.moveUp();
-        if (inputController.isDownPressed()) playerShip.moveDown();
-
-        // Shoot when mouse is clicked
-        if (inputController.isShootingPressed()) {
-            fireBullet();
+        if (inputController.isLeftPressed()) playerShip.rotateLeft();
+        if (inputController.isRightPressed()) playerShip.rotateRight();
+        // Play thrust sound when moving forward
+        if (inputController.isUpPressed()) {
+            playerShip.thrustForward();
+            if (!thrustSound.isPlaying()) {
+                thrustSound.play();
+            }
+        } else {
+            playerShip.stopThrusting();  // Stop showing thrust effect when not pressing up
+            thrustSound.stop();  // Stop sound when not pressing thrust
+            playerShip.decelerate();  // Decelerate when UP key is not pressed
+        }
+        // Apply backward thrust when DOWN key is pressed
+        if (inputController.isDownPressed()) {
+            playerShip.thrustBackward();
         }
 
-        playerShip.move();
-        playerShip.draw(gc);
+        playerShip.move();  // Apply movement changes
+        playerShip.draw(gc);  // Draw the ship and the flames (if thrusting)
         playerShip.handleScreenEdges(canvas.getWidth(), canvas.getHeight());
     }
 

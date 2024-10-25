@@ -6,38 +6,26 @@ import javafx.scene.input.KeyCode;
 public class InputController {
     private boolean left, right, up, down, shooting;
     private boolean cheatMode;
-    private double mouseX, mouseY;
 
     public InputController(Scene scene) {
         scene.setOnKeyPressed(event -> {
-            if (event.getCode() == KeyCode.A) left = true;
-            if (event.getCode() == KeyCode.D) right = true;
-            if (event.getCode() == KeyCode.W) up = true;
-            if (event.getCode() == KeyCode.S) down = true;
+            if (event.getCode() == KeyCode.LEFT) left = true;
+            if (event.getCode() == KeyCode.RIGHT) right = true;
+            if (event.getCode() == KeyCode.UP) up = true;
+            if (event.getCode() == KeyCode.DOWN) down = true;
+            if (event.getCode() == KeyCode.SPACE) shooting = true;
             // Activate cheat mode when 'C' is pressed
             if (event.getCode() == KeyCode.C) cheatMode = true;
         });
 
         scene.setOnKeyReleased(event -> {
-            if (event.getCode() == KeyCode.A) left = false;
-            if (event.getCode() == KeyCode.D) right = false;
-            if (event.getCode() == KeyCode.W) up = false;
-            if (event.getCode() == KeyCode.S) down = false;
+            if (event.getCode() == KeyCode.LEFT) left = false;
+            if (event.getCode() == KeyCode.RIGHT) right = false;
+            if (event.getCode() == KeyCode.UP) up = false;
+            if (event.getCode() == KeyCode.DOWN) down = false;
+            if (event.getCode() == KeyCode.SPACE) shooting = false;
             // Deactivate cheat mode when 'C' is released
             if (event.getCode() == KeyCode.C) cheatMode = false;
-        });
-
-        scene.setOnMouseMoved(event -> {
-            mouseX = event.getX();
-            mouseY = event.getY();
-        });
-
-        scene.setOnMousePressed(event -> {
-            shooting = true;
-        });
-
-        scene.setOnMouseReleased(event -> {
-            shooting = false;
         });
     }
 
@@ -65,17 +53,4 @@ public class InputController {
         return cheatMode;
     }
 
-    public double getMouseX() {
-        return mouseX;
-    }
-
-    public double getMouseY() {
-        return mouseY;
-    }
-
-    public double calculateRotationToMouse(double shipX, double shipY) {
-        double deltaX = mouseX - shipX;
-        double deltaY = mouseY - shipY;
-        return Math.atan2(deltaY, deltaX);
-    }
 }
