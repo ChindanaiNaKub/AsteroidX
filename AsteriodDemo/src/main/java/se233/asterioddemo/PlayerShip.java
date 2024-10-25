@@ -11,7 +11,7 @@ public class PlayerShip extends Character {
     private double velocityY = 0;
     private final double MAX_SPEED = 5.0;
     private final double THRUST = 0.05;  // Power of thrust
-    private final double DECELERATION = 1.0;  // Friction to slow down over time
+    private final double DECELERATION = 0.98;  // Friction to slow down over time
     private boolean isThrusting = false;  // Track if the ship is thrusting
     private Image shipImage;
     private long lastBulletTime = 0;
@@ -102,11 +102,11 @@ public class PlayerShip extends Character {
     }
 
     public void rotateLeft() {
-        angle -= 0.05;
+        angle -= 2;
     }
 
     public void rotateRight() {
-        angle += 0.05;
+        angle += 2;
     }
 
     public void thrustForward() {
@@ -120,7 +120,18 @@ public class PlayerShip extends Character {
             velocityX *= MAX_SPEED / Math.sqrt(velocityX * velocityX + velocityY * velocityY);
             velocityY *= MAX_SPEED / Math.sqrt(velocityX * velocityX + velocityY * velocityY);
         }
+    }
 
+    public void thrustBackward() {
+        // Enable thrusting backwards, reducing velocity
+        velocityX -= Math.cos(angle) * THRUST;
+        velocityY -= Math.sin(angle) * THRUST;
+
+        // Cap velocity at max speed
+        if (Math.sqrt(velocityX * velocityX + velocityY * velocityY) > MAX_SPEED) {
+            velocityX *= MAX_SPEED / Math.sqrt(velocityX * velocityX + velocityY * velocityY);
+            velocityY *= MAX_SPEED / Math.sqrt(velocityX * velocityX + velocityY * velocityY);
+        }
     }
 
     public void stopThrusting() {
@@ -129,5 +140,11 @@ public class PlayerShip extends Character {
 
     public double getAngle() {
         return angle;
+    }
+
+    public void decelerate() {
+        // Apply friction to slow down the ship gradually
+        velocityX *= DECELERATION;
+        velocityY *= DECELERATION;
     }
 }
