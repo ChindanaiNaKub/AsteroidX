@@ -62,6 +62,7 @@ public class InputController {
         return cheatMode;
     }
 
+    //get position of mouse movement
     public double getMouseX() {
         return mouseX;
     }

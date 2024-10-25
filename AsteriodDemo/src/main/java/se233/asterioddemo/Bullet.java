@@ -22,7 +22,7 @@ public class Bullet {
         this.y = startY;
         this.angle = angle;
 
-        // Load image and set size based on bullet type
+        // Load image and set size based on bullet type.
         switch (type) {
             case PLAYER:
                 this.bulletImage = new Image(getClass().getResourceAsStream("/sprite/bullet.png"));

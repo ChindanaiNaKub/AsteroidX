@@ -23,7 +23,7 @@ public class PlayerShip extends Character {
         this.shipImage = new Image(getClass().getResourceAsStream("/sprite/ship.png"));
     }
 
-    // Method to fire bullets from the ship
+    // Method to fire bullets from the ship.
     public Bullet fireBullet() {
         long currentTime = System.currentTimeMillis();
         if (currentTime - lastBulletTime >= bulletCooldown) {

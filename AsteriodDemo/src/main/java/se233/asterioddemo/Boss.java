@@ -15,7 +15,7 @@ public class Boss extends Character {
 
     public Boss(double x, double y, double speed, double size) {
         super(x, y, speed, size);
-        this.x = x;  // Correctly initialize position
+        this.x = x;  // Correctly initialize position.
         this.y = y;
         this.size = size;
         this.speed = speed;

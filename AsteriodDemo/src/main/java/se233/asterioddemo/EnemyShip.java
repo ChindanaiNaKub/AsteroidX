@@ -54,7 +54,7 @@ public class EnemyShip extends Character {
         return false;
     }
 
-    // Move the enemy towards the player or randomly change its direction
+    // Move the enemy towards the player or randomly change its direction.
     public void move(double targetX, double targetY) {
         // Randomly change direction after a certain period
         if (changeDirectionTimer <= 0) {
