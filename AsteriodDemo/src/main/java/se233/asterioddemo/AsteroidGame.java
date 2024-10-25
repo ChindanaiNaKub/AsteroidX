@@ -5,6 +5,7 @@ import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.Image;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -39,6 +40,7 @@ public class AsteroidGame extends Application {
     static final Logger logger = Logger.getLogger(AsteroidGame.class.getName());
 
     private LevelProgressManager levelProgressManager;
+    private Image backgroundImage;
 
     @Override
     public void start(Stage primaryStage) {
@@ -61,6 +63,9 @@ public class AsteroidGame extends Application {
         primaryStage.show();
 
         gc = canvas.getGraphicsContext2D();
+
+        // Load the background image
+        backgroundImage = new Image(getClass().getResource("/sprite/background.png").toExternalForm());
 
         // Initialize the game state, input controller, and level manager
         gameState = new GameState();
@@ -179,7 +184,6 @@ public class AsteroidGame extends Application {
         }
     }
 
-
     private void drawBossBullets() {
         if (boss != null) {  // Check if boss is not null
             List<Bullet> bossBullets = boss.getBossBullets();
@@ -191,14 +195,12 @@ public class AsteroidGame extends Application {
         }
     }
 
-
     // New method to handle victory or next level transition
     private void handleVictory() {
         // Move to next level or trigger victory condition
         gameState.nextLevel();
         logger.info("Victory! Moving to next level.");
     }
-
 
     private void fireBullet() {
         Bullet bullet = playerShip.fireBullet();
@@ -215,8 +217,8 @@ public class AsteroidGame extends Application {
     }
 
     private void clearScreen() {
-        gc.setFill(Color.BLACK);
-        gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
+        // Draw the background image
+        gc.drawImage(backgroundImage, 0, 0, canvas.getWidth(), canvas.getHeight());
     }
 
     private void updatePlayerShip() {
@@ -232,14 +234,18 @@ public class AsteroidGame extends Application {
         } else {
             playerShip.stopThrusting();  // Stop showing thrust effect when not pressing up
             thrustSound.stop();  // Stop sound when not pressing thrust
+            playerShip.decelerate();  // Decelerate when UP key is not pressed
+        }
+
+        // Apply backward thrust when DOWN key is pressed
+        if (inputController.isDownPressed()) {
+            playerShip.thrustBackward();
         }
 
         playerShip.move();  // Apply movement changes
         playerShip.draw(gc);  // Draw the ship and the flames (if thrusting)
         playerShip.handleScreenEdges(canvas.getWidth(), canvas.getHeight());
     }
-
-
 
     private void drawUI() {
         gc.setFill(Color.WHITE);
@@ -295,7 +301,4 @@ public class AsteroidGame extends Application {
         levelProgressManager.resetLevelTimer();  // Reset timer for the new level
         logger.info("Game restarted.");
     }
-
-
-
 }
