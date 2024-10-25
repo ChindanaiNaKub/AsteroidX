@@ -31,7 +31,9 @@ public class PlayerShip extends Character {
             double shipTipOffset = this.getSize() / 2;
             double bulletStartX = this.getX() + Math.cos(this.getAngle() - Math.PI / 2) * shipTipOffset;
             double bulletStartY = this.getY() + Math.sin(this.getAngle() - Math.PI / 2) * shipTipOffset;
-            return new Bullet(bulletStartX, bulletStartY, this.getAngle() - Math.PI / 2);
+
+            // Fire bullet with BulletType.PLAYER
+            return new Bullet(bulletStartX, bulletStartY, this.getAngle() - Math.PI / 2, Bullet.BulletType.PLAYER);
         }
         return null;
     }
@@ -100,26 +102,20 @@ public class PlayerShip extends Character {
         health = 100;
     }
 
-    public void moveLeft() {
-        this.x -= speed;  // Move left by speed units
+    public void moveHorizontallyLeft() {
+        x -= MAX_SPEED;
     }
 
-    public void moveRight() {
-        this.x += speed;  // Move right by speed units
+    public void moveHorizontallyRight() {
+        x += MAX_SPEED;
     }
 
-    public void moveUp() {
-        this.y -= speed;  // Move up by speed units
+    public void moveVerticallyUp() {
+        y -= MAX_SPEED;
     }
 
-    public void moveDown() {
-        this.y += speed;  // Move down by speed units
-    }
-
-    public void rotateToMouse(double mouseX, double mouseY) {
-        double deltaX = mouseX - this.x;
-        double deltaY = mouseY - this.y;
-        this.angle = Math.atan2(deltaY, deltaX) - Math.PI / 2; // Adjust the angle to align correctly with the sprite orientation
+    public void moveVerticallyDown() {
+        y += MAX_SPEED;
     }
 
     public void thrustForward() {
@@ -151,6 +147,12 @@ public class PlayerShip extends Character {
         isThrusting = false;  // Disable thrust effect
     }
 
+    public void rotateToMouse(double mouseX, double mouseY) {
+        double deltaX = mouseX - x;
+        double deltaY = mouseY - y;
+        angle = Math.atan2(deltaY, deltaX);
+    }
+
     public double getAngle() {
         return angle;
     }
@@ -159,9 +161,5 @@ public class PlayerShip extends Character {
         // Apply friction to slow down the ship gradually
         velocityX *= DECELERATION;
         velocityY *= DECELERATION;
-    }
-
-    public void rotateTo(double targetAngle) {
-        this.angle = targetAngle - Math.PI / 2; // Adjust the angle so the ship points correctly towards the cursor
     }
 }

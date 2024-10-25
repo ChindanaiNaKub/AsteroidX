@@ -96,16 +96,7 @@ public class AsteroidGame extends Application {
         scene.setOnMouseClicked(event -> {
             if (gameOver) {
                 restartGame();
-            } else {
-                fireBullet();
             }
-        });
-
-        // Handle mouse movement to rotate player ship
-        scene.setOnMouseMoved(event -> {
-            double mouseX = event.getX();
-            double mouseY = event.getY();
-            playerShip.rotateToMouse(mouseX, mouseY);
         });
     }
 
@@ -134,6 +125,10 @@ public class AsteroidGame extends Application {
 
             if (gameState.isGameOver()) {
                 triggerGameOver();
+            }
+
+            if (inputController.isShootingPressed()) {
+                fireBullet();
             }
 
             // Spawn boss or move to the next level if all enemies and asteroids are cleared
@@ -227,26 +222,15 @@ public class AsteroidGame extends Application {
     }
 
     private void updatePlayerShip() {
-        // Rotate to follow the mouse cursor
-        double mouseX = inputController.getMouseX();
-        double mouseY = inputController.getMouseY();
-        playerShip.rotateToMouse(mouseX, mouseY);
+        if (inputController.isLeftPressed()) playerShip.moveHorizontallyLeft();
+        if (inputController.isRightPressed()) playerShip.moveHorizontallyRight();
+        if (inputController.isUpPressed()) playerShip.moveVerticallyUp();
+        if (inputController.isDownPressed()) playerShip.moveVerticallyDown();
 
-        // Move left or right without affecting rotation
-        if (inputController.isLeftPressed()) playerShip.moveLeft();
-        if (inputController.isRightPressed()) playerShip.moveRight();
+        playerShip.rotateToMouse(inputController.getMouseX(), inputController.getMouseY());
 
-        // Move up or down
-        if (inputController.isUpPressed()) playerShip.moveUp();
-        if (inputController.isDownPressed()) playerShip.moveDown();
-
-        // Shoot when mouse is clicked
-        if (inputController.isShootingPressed()) {
-            fireBullet();
-        }
-
-        playerShip.move();
-        playerShip.draw(gc);
+        playerShip.move();  // Apply movement changes
+        playerShip.draw(gc);  // Draw the ship and the flames (if thrusting)
         playerShip.handleScreenEdges(canvas.getWidth(), canvas.getHeight());
     }
 

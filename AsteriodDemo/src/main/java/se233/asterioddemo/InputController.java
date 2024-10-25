@@ -2,6 +2,7 @@ package se233.asterioddemo;
 
 import javafx.scene.Scene;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.MouseEvent;
 
 public class InputController {
     private boolean left, right, up, down, shooting;
@@ -10,35 +11,31 @@ public class InputController {
 
     public InputController(Scene scene) {
         scene.setOnKeyPressed(event -> {
-            if (event.getCode() == KeyCode.A) left = true;
-            if (event.getCode() == KeyCode.D) right = true;
-            if (event.getCode() == KeyCode.W) up = true;
-            if (event.getCode() == KeyCode.S) down = true;
+            if (event.getCode() == KeyCode.LEFT) left = true;
+            if (event.getCode() == KeyCode.RIGHT) right = true;
+            if (event.getCode() == KeyCode.UP) up = true;
+            if (event.getCode() == KeyCode.DOWN) down = true;
             // Activate cheat mode when 'C' is pressed
             if (event.getCode() == KeyCode.C) cheatMode = true;
         });
 
         scene.setOnKeyReleased(event -> {
-            if (event.getCode() == KeyCode.A) left = false;
-            if (event.getCode() == KeyCode.D) right = false;
-            if (event.getCode() == KeyCode.W) up = false;
-            if (event.getCode() == KeyCode.S) down = false;
+            if (event.getCode() == KeyCode.LEFT) left = false;
+            if (event.getCode() == KeyCode.RIGHT) right = false;
+            if (event.getCode() == KeyCode.UP) up = false;
+            if (event.getCode() == KeyCode.DOWN) down = false;
             // Deactivate cheat mode when 'C' is released
             if (event.getCode() == KeyCode.C) cheatMode = false;
         });
 
-        scene.setOnMouseMoved(event -> {
-            mouseX = event.getX();
-            mouseY = event.getY();
-        });
+        scene.setOnMousePressed(event -> shooting = true);
+        scene.setOnMouseReleased(event -> shooting = false);
+        scene.setOnMouseMoved(this::handleMouseMoved);
+    }
 
-        scene.setOnMousePressed(event -> {
-            shooting = true;
-        });
-
-        scene.setOnMouseReleased(event -> {
-            shooting = false;
-        });
+    private void handleMouseMoved(MouseEvent event) {
+        mouseX = event.getX();
+        mouseY = event.getY();
     }
 
     public boolean isLeftPressed() {
@@ -71,11 +68,5 @@ public class InputController {
 
     public double getMouseY() {
         return mouseY;
-    }
-
-    public double calculateRotationToMouse(double shipX, double shipY) {
-        double deltaX = mouseX - shipX;
-        double deltaY = mouseY - shipY;
-        return Math.atan2(deltaY, deltaX);
     }
 }

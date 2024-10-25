@@ -2,7 +2,6 @@ package se233.asterioddemo;
 
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
-import javafx.scene.paint.Color;
 import java.util.Random;
 
 public class EnemyShip extends Character {
@@ -16,43 +15,36 @@ public class EnemyShip extends Character {
 
     // Array of enemy sprites
     private static final String[] ENEMY_SPRITES = {
-            "/sprite/big_enemy_0.png",
             "/sprite/big_enemy_1.png",
             "/sprite/big_enemy_2.png"
     };
 
     @Override
     public void move() {
-        // You could either leave it empty if not used directly or use a placeholder.
-        // Optionally you can delegate to another move method, like the one with player targeting
+        // Empty method for potential extension or subclassing
     }
-
 
     public EnemyShip(double x, double y, double speed, double size, double angle) {
         super(x, y, speed, size);
         this.angle = angle;
 
         // Load a random sprite for this enemy
-        Random random = new Random();
         int spriteIndex = random.nextInt(ENEMY_SPRITES.length);
         sprite = new Image(getClass().getResourceAsStream(ENEMY_SPRITES[spriteIndex]));
     }
 
+    // Method to shoot towards the player
     public Bullet shoot(double playerX, double playerY) {
         // Calculate angle towards player
         double directionX = playerX - this.x;
         double directionY = playerY - this.y;
         double angle = Math.atan2(directionY, directionX);
 
-        // Create and return a bullet aimed at the player
-        return new Bullet(this.x, this.y, angle);
+        // Create and return a bullet aimed at the player with BulletType.ENEMY
+        return new Bullet(this.x, this.y, angle, Bullet.BulletType.ENEMY);
     }
 
-    public Bullet shootTowards(double playerX, double playerY) {
-        double angleToPlayer = Math.atan2(playerY - y, playerX - x);
-        return new Bullet(x, y, angleToPlayer);  // Shoot bullet towards player
-    }
-
+    // Check if enough time has passed since the last shot to shoot again
     public boolean canShoot() {
         long currentTime = System.currentTimeMillis();
         if (currentTime - lastShootTime >= shootInterval) {
@@ -62,7 +54,7 @@ public class EnemyShip extends Character {
         return false;
     }
 
-    // Move the enemy towards the player or in random movement
+    // Move the enemy towards the player or randomly change its direction
     public void move(double targetX, double targetY) {
         // Randomly change direction after a certain period
         if (changeDirectionTimer <= 0) {
@@ -94,11 +86,21 @@ public class EnemyShip extends Character {
         gc.restore();
     }
 
+    // Method to take damage and reduce health
+    public void takeDamage(int damage) {
+        this.health -= damage;
+    }
+
+    // Getter for enemy health
     public int getHealth() {
         return health;
     }
 
-    public void takeDamage(int damage) {
-        this.health -= damage;
+    public Bullet shootTowards(double playerX, double playerY) {
+        // Calculate the angle from the enemy's current position (x, y) to the player's position (playerX, playerY)
+        double angleToPlayer = Math.atan2(playerY - y, playerX - x);
+
+        // Create and return a bullet aimed towards the player
+        return new Bullet(x, y, angleToPlayer, Bullet.BulletType.ENEMY);
     }
 }

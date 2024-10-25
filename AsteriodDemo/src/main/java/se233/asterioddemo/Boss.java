@@ -6,8 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
-
-public class Boss extends Character{
+public class Boss extends Character {
     private double x, y;
     private double speed;
     private double size;
@@ -35,7 +34,9 @@ public class Boss extends Character{
         // Boss attacks by shooting bullets
         if (Math.random() < 0.05) {  // Randomly fire a bullet
             double bulletSpeed = 3;
-            bossBullets.add(new Bullet(x, y + size / 2, Math.PI / 2));  // Shoot downward
+            // Create a new Bullet aimed downward with BulletType.BOSS
+            Bullet bossBullet = new Bullet(x, y + size / 2, Math.PI / 2, Bullet.BulletType.BOSS);
+            bossBullets.add(bossBullet);
         }
     }
 
@@ -48,8 +49,6 @@ public class Boss extends Character{
         gc.setFill(Color.RED);
         gc.fillRect(x - size / 2, y - size - 10, size * (health / 100.0), 5);  // Health bar
     }
-
-
 
     public void takeDamage() {
         health -= 10;  // Reduce health by 10 for each hit

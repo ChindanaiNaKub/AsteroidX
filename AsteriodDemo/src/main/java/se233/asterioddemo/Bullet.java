@@ -4,17 +4,39 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 
 public class Bullet {
+    public enum BulletType {
+        PLAYER,
+        ENEMY,
+        BOSS
+    }
+
     private double x, y;
     private double angle;
     private double speed = 3;
-    private Image bulletImage;  // The bullet image
+    private double size;  // Size of the bullet (can vary for enemy and boss)
+    private Image bulletImage;
 
-    public Bullet(double startX, double startY, double angle) {
+    // Constructor that takes a bullet type and sets the size based on the type
+    public Bullet(double startX, double startY, double angle, BulletType type) {
         this.x = startX;
         this.y = startY;
         this.angle = angle;
-        // Load the bullet image
-        this.bulletImage = new Image(getClass().getResourceAsStream("/sprite/bullet.png"));
+
+        // Load image and set size based on bullet type
+        switch (type) {
+            case PLAYER:
+                this.bulletImage = new Image(getClass().getResourceAsStream("/sprite/bullet.png"));
+                this.size = 64;  // Default size for player bullets
+                break;
+            case ENEMY:
+                this.bulletImage = new Image(getClass().getResourceAsStream("/sprite/enemy_shot_0.png"));
+                this.size = 20;  // Example: smaller size for enemy bullets
+                break;
+            case BOSS:
+                this.bulletImage = new Image(getClass().getResourceAsStream("/sprite/enemy_shot_0.png"));
+                this.size = 20;  // Example: larger size for boss bullets
+                break;
+        }
     }
 
     // Update method with screen wrapping logic
@@ -29,9 +51,9 @@ public class Bullet {
         if (y > screenHeight) y = 0;
     }
 
-    // Draw the bullet on the screen using the image
+    // Draw the bullet on the screen using the image, scaled to the specified size
     public void draw(GraphicsContext gc) {
-        gc.drawImage(bulletImage, x - bulletImage.getWidth() / 2, y - bulletImage.getHeight() / 2);
+        gc.drawImage(bulletImage, x - size / 2, y - size / 2, size, size);
     }
 
     // Getters for bullet position
