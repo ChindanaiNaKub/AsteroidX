@@ -16,12 +16,75 @@ public class PlayerShip extends Character {
     private Image shipImage;
     private long lastBulletTime = 0;
     private final long bulletCooldown = 300;
+    private SpriteLoader spriteLoader;
 
-    public PlayerShip(double x, double y, double speed, double size) {
+    public PlayerShip(double x, double y, double speed, double size, SpriteLoader spriteLoader) {
         super(x, y, speed, size);
         this.angle = 0;
         this.health = 100;
-        this.shipImage = new Image(getClass().getResourceAsStream("/sprite/ship.png"));
+        this.spriteLoader = spriteLoader;
+        // Load the ship sprite from the sheet using the SpriteLoader
+        this.shipImage = spriteLoader.getSprite("playerShip1_blue.png");  // Adjust based on your XML
+    }
+
+    @Override
+    public void draw(GraphicsContext gc) {
+        gc.save();
+
+        // Center point translation
+        gc.translate(x, y);
+
+        // Convert angle to degrees and rotate
+        gc.rotate(Math.toDegrees(angle));
+
+        double imageWidth = shipImage.getWidth();
+        double imageHeight = shipImage.getHeight();
+
+        // Calculate scale factor based on desired size
+        double scaleFactor = 1.0;  // Use max dimension for consistent scaling
+
+        // Apply scale
+        gc.scale(scaleFactor, scaleFactor);
+
+        // Draw the ship image centered
+        gc.drawImage(
+                shipImage,
+                -imageWidth / 2,  // Center horizontally
+                -imageHeight / 2, // Center vertically
+                imageWidth,
+                imageHeight
+        );
+
+        if (isThrusting) {
+            double flameSize = imageHeight * 0.2;
+            for (int i = 0; i < 3; i++) {
+                drawFlame(gc, flameSize, 0.7 - (i * 0.2));
+            }
+            gc.setGlobalAlpha(1.0);
+        }
+
+        gc.restore();
+    }
+
+    private void drawFlame(GraphicsContext gc, double size, double opacity) {
+        gc.setGlobalAlpha(opacity);
+        gc.setFill(getFlameColor());
+
+        double flickerX = (Math.random() - 0.5) * size * 0.2;
+        double flickerY = (Math.random() - 0.5) * size * 0.2;
+
+        double[] xPoints = {0, -size * 0.5 + flickerX, size * 0.5 + flickerX};
+        double[] yPoints = {0, size + flickerY, size + flickerY};
+
+        gc.fillPolygon(xPoints, yPoints, 3);
+    }
+
+    private Color getFlameColor() {
+        // Returns different colors for flame variation
+        double random = Math.random();
+        if (random < 0.3) return Color.ORANGE;
+        if (random < 0.6) return Color.YELLOW;
+        return Color.RED;
     }
 
     // Method to fire bullets from the ship
@@ -32,7 +95,7 @@ public class PlayerShip extends Character {
             double shipTipOffset = this.getSize() / 2;
             double bulletStartX = this.getX() + Math.cos(this.getAngle() - Math.PI / 2) * shipTipOffset;
             double bulletStartY = this.getY() + Math.sin(this.getAngle() - Math.PI / 2) * shipTipOffset;
-            return new Bullet(bulletStartX, bulletStartY, this.getAngle() - Math.PI / 2);
+            return new Bullet(bulletStartX, bulletStartY, this.getAngle() - Math.PI / 2, spriteLoader);
         }
         return null;
     }
@@ -70,24 +133,6 @@ public class PlayerShip extends Character {
         velocityY *= DECELERATION;
     }
 
-    @Override
-    public void draw(GraphicsContext gc) {
-        gc.save();
-        gc.translate(x, y);
-        gc.rotate(Math.toDegrees(angle));
-        // Draw the ship image, centered
-        gc.drawImage(shipImage, -shipImage.getWidth() / 2, -shipImage.getHeight() / 2);
-
-        // Draw thrust flames if thrusting
-        if (isThrusting) {
-            gc.setFill(javafx.scene.paint.Color.RED);
-            double[] flameXPoints = {0, -7, 7};
-            double[] flameYPoints = {12, 25, 25};
-            gc.fillPolygon(flameXPoints, flameYPoints, 3);
-        }
-
-        gc.restore();
-    }
 
     public void takeDamage() {
         health -= 10;
@@ -146,5 +191,27 @@ public class PlayerShip extends Character {
         // Apply friction to slow down the ship gradually
         velocityX *= DECELERATION;
         velocityY *= DECELERATION;
+    }
+
+    public void rotateToMouse(double mouseX, double mouseY) {
+        double deltaX = mouseX - x;
+        double deltaY = mouseY - y;
+        angle = Math.atan2(deltaY, deltaX);
+    }
+
+    public void moveHorizontallyLeft() {
+        x -= MAX_SPEED;
+    }
+
+    public void moveHorizontallyRight() {
+        x += MAX_SPEED;
+    }
+
+    public void moveVerticallyUp() {
+        y -= MAX_SPEED;
+    }
+
+    public void moveVerticallyDown() {
+        y += MAX_SPEED;
     }
 }

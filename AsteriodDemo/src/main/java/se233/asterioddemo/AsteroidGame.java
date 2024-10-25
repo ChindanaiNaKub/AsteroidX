@@ -38,6 +38,15 @@ public class AsteroidGame extends Application {
 
     private Image backgroundImage;
 
+    private SpriteLoader spriteLoader;
+
+    // Define number sprites
+    private static final String[] NUMBER_SPRITES = {
+            "numeral0.png", "numeral1.png", "numeral2.png",
+            "numeral3.png", "numeral4.png", "numeral5.png",
+            "numeral6.png", "numeral7.png", "numeral8.png", "numeral9.png"
+    };
+
     @Override
     public void start(Stage primaryStage) {
 
@@ -46,6 +55,8 @@ public class AsteroidGame extends Application {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        spriteLoader = new SpriteLoader("/sprite/sheet.png", "/sprite/sheet.xml");
 
         Pane root = new Pane();
         canvas = new Canvas(800, 600);
@@ -59,15 +70,15 @@ public class AsteroidGame extends Application {
         gc = canvas.getGraphicsContext2D();
 
         // Load the background image
-        backgroundImage = new Image(getClass().getResource("/sprite/background.png").toExternalForm());
+        backgroundImage = new Image(getClass().getResource("/sprite/blue.png").toExternalForm());
 
         // Initialize the game state, input controller, and entity manager
         gameState = new GameState();
         inputController = new InputController(scene);
-        gameEntityManager = new GameEntityManager();
+        gameEntityManager = new GameEntityManager(spriteLoader);
 
         // Create a new PlayerShip object
-        playerShip = new PlayerShip(400, 300, 5, 30);
+        playerShip = new PlayerShip(400, 300, 5, 30, spriteLoader);
 
         // Load sounds
         laserSound = new AudioClip(getClass().getResource("/sounds/laser.m4a").toExternalForm());
@@ -106,7 +117,7 @@ public class AsteroidGame extends Application {
             gameEntityManager.updateAndDrawEnemyBullets(gc, canvas.getWidth(), canvas.getHeight());
             gameEntityManager.updateAndDrawAsteroids(gc);
 
-            drawUI();
+            drawUI(gc, spriteLoader, gameState);
             checkCollisions();
 
             if (gameState.isGameOver()) {
@@ -147,7 +158,6 @@ public class AsteroidGame extends Application {
         if (bullet != null) {
             gameEntityManager.addBullet(bullet);
             laserSound.play();
-            logger.info("Bullet fired from position: (" + bullet.getX() + ", " + bullet.getY() + ")");
         }
     }
 
@@ -161,32 +171,42 @@ public class AsteroidGame extends Application {
     }
 
     private void updatePlayerShip() {
-        if (inputController.isLeftPressed()) playerShip.rotateLeft();
-        if (inputController.isRightPressed()) playerShip.rotateRight();
-        if (inputController.isUpPressed()) {
-            playerShip.thrustForward();
-            if (!thrustSound.isPlaying()) {
-                thrustSound.play();
-            }
-        } else {
-            playerShip.stopThrusting();
-            thrustSound.stop();
-            playerShip.decelerate();
-        }
-        if (inputController.isDownPressed()) {
-            playerShip.thrustBackward();
-        }
+        if (inputController.isLeftPressed()) playerShip.moveHorizontallyLeft();
+        if (inputController.isRightPressed()) playerShip.moveHorizontallyRight();
+        if (inputController.isUpPressed()) playerShip.moveVerticallyUp();
+        if (inputController.isDownPressed()) playerShip.moveVerticallyDown();
+
+        playerShip.rotateToMouse(inputController.getMouseX(), inputController.getMouseY());
 
         playerShip.move();
         playerShip.draw(gc);
         playerShip.handleScreenEdges(canvas.getWidth(), canvas.getHeight());
     }
 
-    private void drawUI() {
+    public void drawNumber(GraphicsContext gc, int number, double x, double y, SpriteLoader spriteLoader) {
+        String numberString = Integer.toString(number);
+        double spacing = 20; // Adjust spacing between digits
+
+        for (int i = 0; i < numberString.length(); i++) {
+            int digit = Integer.parseInt(String.valueOf(numberString.charAt(i))); // Convert char to int
+            Image sprite = spriteLoader.getSprite(NUMBER_SPRITES[digit]);
+            gc.drawImage(sprite, x + i * spacing, y);
+        }
+    }
+
+
+    // Method to draw the UI (score and lives)
+    private void drawUI(GraphicsContext gc, SpriteLoader spriteLoader, GameState gameState) {
         gc.setFill(Color.WHITE);
         gc.setFont(new Font(20));
-        gc.fillText("Score: " + gameState.getScore(), 20, 30);
-        gc.fillText("Lives: " + gameState.getLives(), 20, 60);
+
+        // Draw lives in the top left corner
+        gc.drawImage(spriteLoader.getSprite("playerLife1_blue.png"), 20, 20);
+        drawNumber(gc, gameState.getLives(), 60, 20, spriteLoader);
+
+        // Draw score in the top right corner
+        double screenWidth = gc.getCanvas().getWidth();
+        drawNumber(gc, gameState.getScore(), screenWidth - 100, 20, spriteLoader);
     }
 
     private void triggerGameOver() {
@@ -209,9 +229,7 @@ public class AsteroidGame extends Application {
         gameState.reset();
         playerShip.reset(400, 300, 5);
         playerShip.resetHealth();
-        gameEntityManager.clearAsteroids();
-        gameEntityManager.clearBullets();
-        gameEntityManager.clearEnemyShips();
+        gameEntityManager.clearAll();
         logger.info("Game restarted.");
     }
 }

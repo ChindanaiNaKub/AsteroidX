@@ -2,10 +2,12 @@ package se233.asterioddemo;
 
 import javafx.scene.Scene;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.MouseEvent;
 
 public class InputController {
     private boolean left, right, up, down, shooting;
     private boolean cheatMode;
+    private double mouseX, mouseY;
 
     public InputController(Scene scene) {
         scene.setOnKeyPressed(event -> {
@@ -13,7 +15,10 @@ public class InputController {
             if (event.getCode() == KeyCode.RIGHT) right = true;
             if (event.getCode() == KeyCode.UP) up = true;
             if (event.getCode() == KeyCode.DOWN) down = true;
-            if (event.getCode() == KeyCode.SPACE) shooting = true;
+            if (event.getCode() == KeyCode.A) left = true;
+            if (event.getCode() == KeyCode.D) right = true;
+            if (event.getCode() == KeyCode.W) up = true;
+            if (event.getCode() == KeyCode.S) down = true;
             // Activate cheat mode when 'C' is pressed
             if (event.getCode() == KeyCode.C) cheatMode = true;
         });
@@ -23,10 +28,22 @@ public class InputController {
             if (event.getCode() == KeyCode.RIGHT) right = false;
             if (event.getCode() == KeyCode.UP) up = false;
             if (event.getCode() == KeyCode.DOWN) down = false;
-            if (event.getCode() == KeyCode.SPACE) shooting = false;
+            if (event.getCode() == KeyCode.A) left = false;
+            if (event.getCode() == KeyCode.D) right = false;
+            if (event.getCode() == KeyCode.W) up = false;
+            if (event.getCode() == KeyCode.S) down = false;
             // Deactivate cheat mode when 'C' is released
             if (event.getCode() == KeyCode.C) cheatMode = false;
         });
+
+        scene.setOnMousePressed(event -> shooting = true);
+        scene.setOnMouseReleased(event -> shooting = false);
+        scene.setOnMouseMoved(this::handleMouseMoved);
+    }
+
+    private void handleMouseMoved(MouseEvent event) {
+        mouseX = event.getX();
+        mouseY = event.getY();
     }
 
     public boolean isLeftPressed() {
@@ -53,4 +70,12 @@ public class InputController {
         return cheatMode;
     }
 
+    //get position of mouse movement
+    public double getMouseX() {
+        return mouseX;
+    }
+
+    public double getMouseY() {
+        return mouseY;
+    }
 }

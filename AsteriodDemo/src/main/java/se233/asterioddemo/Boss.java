@@ -31,13 +31,14 @@ public class Boss extends Character{
         }
     }
 
-    public void attack() {
+    public void attack(SpriteLoader spriteLoader) {
         // Boss attacks by shooting bullets
         if (Math.random() < 0.05) {  // Randomly fire a bullet
             double bulletSpeed = 3;
-            bossBullets.add(new Bullet(x, y + size / 2, Math.PI / 2));  // Shoot downward
+            bossBullets.add(new Bullet(x, y + size / 2, Math.PI / 2, spriteLoader));  // Pass the spriteLoader
         }
     }
+
 
     public void draw(GraphicsContext gc) {
         // Draw the boss as a large rectangle

@@ -2,7 +2,7 @@ package se233.asterioddemo;
 
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
-import javafx.scene.paint.Color;
+
 import java.util.Random;
 
 public class EnemyShip extends Character {
@@ -13,44 +13,48 @@ public class EnemyShip extends Character {
     private double changeDirectionTimer = 0;  // Timer to change direction periodically
     private Random random = new Random();
     private Image sprite;
+    private final SpriteLoader spriteLoader;
 
-    // Array of enemy sprites
+    // Array of enemy sprites from the texture atlas
     private static final String[] ENEMY_SPRITES = {
-            "/sprite/big_enemy_0.png",
-            "/sprite/big_enemy_1.png",
-            "/sprite/big_enemy_2.png"
+            "enemyBlack1.png",
+            "enemyBlack2.png",
+            "enemyBlack3.png",
+            "enemyBlack4.png",
+            "enemyBlack5.png",
+            "enemyBlue1.png",
+            "enemyBlue2.png",
+            "enemyBlue3.png",
+            "enemyBlue4.png",
+            "enemyBlue5.png",
+            "enemyGreen1.png",
+            "enemyGreen2.png",
+            "enemyGreen3.png",
+            "enemyGreen4.png",
+            "enemyGreen5.png",
+            "enemyRed1.png",
+            "enemyRed2.png",
+            "enemyRed3.png",
+            "enemyRed4.png",
+            "enemyRed5.png"
     };
 
-    @Override
-    public void move() {
-        // You could either leave it empty if not used directly or use a placeholder.
-        // Optionally you can delegate to another move method, like the one with player targeting
-    }
-
-
-    public EnemyShip(double x, double y, double speed, double size, double angle) {
+    // Constructor
+    public EnemyShip(double x, double y, double speed, double size, double angle, SpriteLoader spriteLoader) {
         super(x, y, speed, size);
         this.angle = angle;
+        this.spriteLoader = spriteLoader;
 
-        // Load a random sprite for this enemy
+        // Load a random sprite for this enemy from the texture atlas
         Random random = new Random();
-        int spriteIndex = random.nextInt(ENEMY_SPRITES.length);
-        sprite = new Image(getClass().getResourceAsStream(ENEMY_SPRITES[spriteIndex]));
+        String spriteKey = ENEMY_SPRITES[random.nextInt(ENEMY_SPRITES.length)];
+        sprite = spriteLoader.getSprite(spriteKey);  // Fetch the sprite from the atlas
     }
 
-    public Bullet shoot(double playerX, double playerY) {
-        // Calculate angle towards player
-        double directionX = playerX - this.x;
-        double directionY = playerY - this.y;
-        double angle = Math.atan2(directionY, directionX);
-
-        // Create and return a bullet aimed at the player
-        return new Bullet(this.x, this.y, angle);
-    }
-
+    // Shooting logic towards the player
     public Bullet shootTowards(double playerX, double playerY) {
         double angleToPlayer = Math.atan2(playerY - y, playerX - x);
-        return new Bullet(x, y, angleToPlayer);  // Shoot bullet towards player
+        return new Bullet(x, y, angleToPlayer, spriteLoader);  // Shoot bullet towards player
     }
 
     public boolean canShoot() {
@@ -86,11 +90,27 @@ public class EnemyShip extends Character {
     }
 
     @Override
+    public void move() {
+
+    }
+
+    @Override
     public void draw(GraphicsContext gc) {
         gc.save();
         gc.translate(x, y);
         gc.rotate(Math.toDegrees(angle));
-        gc.drawImage(sprite, -sprite.getWidth() / 2, -sprite.getHeight() / 2, size, size);
+
+        double imageWidth = sprite.getWidth();
+        double imageHeight = sprite.getHeight();
+
+        // Calculate scale factor based on desired size
+        double scaleFactor = this.getSize() / Math.max(imageWidth, imageHeight);  // Use max dimension for consistent scaling
+
+        // Apply scaling
+        gc.scale(scaleFactor, scaleFactor);
+
+        // Draw the enemy sprite centered
+        gc.drawImage(sprite, -imageWidth / 2, -imageHeight / 2, imageWidth, imageHeight);
         gc.restore();
     }
 
