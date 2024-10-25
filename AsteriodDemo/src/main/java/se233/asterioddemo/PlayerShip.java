@@ -2,6 +2,7 @@ package se233.asterioddemo;
 
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
+import javafx.scene.paint.Color;
 
 public class PlayerShip extends Character {
     private int health = 100;
@@ -100,26 +101,12 @@ public class PlayerShip extends Character {
         health = 100;
     }
 
-    public void moveLeft() {
-        this.x -= speed;  // Move left by speed units
+    public void rotateLeft() {
+        angle -= 2;
     }
 
-    public void moveRight() {
-        this.x += speed;  // Move right by speed units
-    }
-
-    public void moveUp() {
-        this.y -= speed;  // Move up by speed units
-    }
-
-    public void moveDown() {
-        this.y += speed;  // Move down by speed units
-    }
-
-    public void rotateToMouse(double mouseX, double mouseY) {
-        double deltaX = mouseX - this.x;
-        double deltaY = mouseY - this.y;
-        this.angle = Math.atan2(deltaY, deltaX) - Math.PI / 2; // Adjust the angle to align correctly with the sprite orientation
+    public void rotateRight() {
+        angle += 2;
     }
 
     public void thrustForward() {
@@ -159,9 +146,5 @@ public class PlayerShip extends Character {
         // Apply friction to slow down the ship gradually
         velocityX *= DECELERATION;
         velocityY *= DECELERATION;
-    }
-
-    public void rotateTo(double targetAngle) {
-        this.angle = targetAngle - Math.PI / 2; // Adjust the angle so the ship points correctly towards the cursor
     }
 }
