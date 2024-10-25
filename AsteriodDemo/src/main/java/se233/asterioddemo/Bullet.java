@@ -30,11 +30,11 @@ public class Bullet {
                 break;
             case ENEMY:
                 this.bulletImage = new Image(getClass().getResourceAsStream("/sprite/enemy_shot_0.png"));
-                this.size = 20;  // Example: smaller size for enemy bullets
+                this.size = 10;  // Example: smaller size for enemy bullets
                 break;
             case BOSS:
                 this.bulletImage = new Image(getClass().getResourceAsStream("/sprite/enemy_shot_0.png"));
-                this.size = 20;  // Example: larger size for boss bullets
+                this.size = 10;  // Example: larger size for boss bullets
                 break;
         }
     }

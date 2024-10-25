@@ -15,6 +15,10 @@ public class InputController {
             if (event.getCode() == KeyCode.RIGHT) right = true;
             if (event.getCode() == KeyCode.UP) up = true;
             if (event.getCode() == KeyCode.DOWN) down = true;
+            if (event.getCode() == KeyCode.A) left = true;
+            if (event.getCode() == KeyCode.D) right = true;
+            if (event.getCode() == KeyCode.W) up = true;
+            if (event.getCode() == KeyCode.S) down = true;
             // Activate cheat mode when 'C' is pressed
             if (event.getCode() == KeyCode.C) cheatMode = true;
         });
@@ -24,6 +28,10 @@ public class InputController {
             if (event.getCode() == KeyCode.RIGHT) right = false;
             if (event.getCode() == KeyCode.UP) up = false;
             if (event.getCode() == KeyCode.DOWN) down = false;
+            if (event.getCode() == KeyCode.A) left = false;
+            if (event.getCode() == KeyCode.D) right = false;
+            if (event.getCode() == KeyCode.W) up = false;
+            if (event.getCode() == KeyCode.S) down = false;
             // Deactivate cheat mode when 'C' is released
             if (event.getCode() == KeyCode.C) cheatMode = false;
         });
