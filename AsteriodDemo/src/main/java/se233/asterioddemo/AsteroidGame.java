@@ -13,7 +13,8 @@ import javafx.stage.Stage;
 import javafx.scene.media.AudioClip;
 
 import java.io.InputStream;
-import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.logging.Logger;
 import java.util.logging.LogManager;
 
@@ -27,19 +28,14 @@ public class AsteroidGame extends Application {
     private GameEntityManager gameEntityManager;
 
     private PlayerShip playerShip;
-    private Boss boss;
     private boolean gameOver;
     private AudioClip laserSound;
     private AudioClip hitSound;
     private AudioClip explodeSound;
     private AudioClip thrustSound;
 
-    private boolean asteroidsSpawned = false;
-    private boolean cheatModeActivated = false;
-
     static final Logger logger = Logger.getLogger(AsteroidGame.class.getName());
 
-    private LevelProgressManager levelProgressManager;
     private Image backgroundImage;
 
     @Override
@@ -50,8 +46,6 @@ public class AsteroidGame extends Application {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-        levelProgressManager = new LevelProgressManager(8000, logger);
 
         Pane root = new Pane();
         canvas = new Canvas(800, 600);
@@ -67,13 +61,13 @@ public class AsteroidGame extends Application {
         // Load the background image
         backgroundImage = new Image(getClass().getResource("/sprite/background.png").toExternalForm());
 
-        // Initialize the game state, input controller, and level manager
+        // Initialize the game state, input controller, and entity manager
         gameState = new GameState();
         inputController = new InputController(scene);
         gameEntityManager = new GameEntityManager();
 
         // Create a new PlayerShip object
-        playerShip = new PlayerShip(400, 300, 5, 30); // x, y, speed, size
+        playerShip = new PlayerShip(400, 300, 5, 30);
 
         // Load sounds
         laserSound = new AudioClip(getClass().getResource("/sounds/laser.m4a").toExternalForm());
@@ -81,8 +75,8 @@ public class AsteroidGame extends Application {
         explodeSound = new AudioClip(getClass().getResource("/sounds/explode.m4a").toExternalForm());
         thrustSound = new AudioClip(getClass().getResource("/sounds/thrust.m4a").toExternalForm());
 
-        // Spawn asteroids for the first level
-        gameEntityManager.spawnAsteroidsForLevel(gameState.getLevel(), gc);
+        // Set up continuous spawning of asteroids and enemies
+        startAsteroidAndEnemySpawning();
 
         // Main game loop
         new AnimationTimer() {
@@ -106,22 +100,14 @@ public class AsteroidGame extends Application {
         if (!gameOver) {
             updatePlayerShip();
 
-            // Spawn asteroids and enemies only once per level
-            if (!asteroidsSpawned) {
-                gameEntityManager.spawnAsteroidsForLevel(gameState.getLevel(), gc);
-                gameEntityManager.spawnEnemyShipsForLevel(gameState.getLevel());  // Spawn enemies here
-                asteroidsSpawned = true;
-            }
-
-            // Update and draw bullets (player, boss, and enemy)
+            // Update and draw bullets (player and enemy)
             gameEntityManager.updateAndDrawBullets(gc, canvas.getWidth(), canvas.getHeight());
-            gameEntityManager.updateAndDrawEnemyShips(gc, playerShip.getX(), playerShip.getY());  // Update enemies and handle movement
-            gameEntityManager.updateAndDrawEnemyBullets(gc, canvas.getWidth(), canvas.getHeight()); // Update enemy bullets
-            drawBossBullets();  // Boss bullet logic
-            gameEntityManager.updateAndDrawAsteroids(gc);  // Asteroid logic
+            gameEntityManager.updateAndDrawEnemyShips(gc, playerShip.getX(), playerShip.getY());
+            gameEntityManager.updateAndDrawEnemyBullets(gc, canvas.getWidth(), canvas.getHeight());
+            gameEntityManager.updateAndDrawAsteroids(gc);
+
             drawUI();
-            checkCollisions();  // Check collisions
-            levelProgressManager.handleLevelTimeout(gameState, gameEntityManager);  // Check for level time limit
+            checkCollisions();
 
             if (gameState.isGameOver()) {
                 triggerGameOver();
@@ -130,82 +116,36 @@ public class AsteroidGame extends Application {
             if (inputController.isShootingPressed()) {
                 fireBullet();
             }
-
-            // Spawn boss or move to the next level if all enemies and asteroids are cleared
-            if (gameEntityManager.areAsteroidsCleared() && gameEntityManager.areEnemiesCleared()) {
-                if (!gameEntityManager.isBossActive()) {
-                    if (gameState.getLevel() >= 10 || cheatModeActivated) {
-                        boss = gameEntityManager.spawnBoss();
-                        logger.info("Boss spawned at level: " + gameState.getLevel());
-                    } else {
-                        gameState.nextLevel();
-                        asteroidsSpawned = false;
-                        logger.info("Level up! Now at level: " + gameState.getLevel());
-                    }
-                }
-            }
-
-            // Update and draw boss logic
-            if (gameEntityManager.isBossActive() && boss != null) {
-                boss.move();
-                boss.attack();
-                boss.draw(gc);
-                drawBossBullets();
-
-                // Check for collisions with boss bullets
-                List<Bullet> bossBullets = boss.getBossBullets();
-                for (Bullet bullet : bossBullets) {
-                    bullet.update(canvas.getWidth(), canvas.getHeight());
-                    gc.setFill(Color.YELLOW);
-                    gc.fillRect(bullet.getX(), bullet.getY(), 5, 5);
-
-                    if (Math.hypot(bullet.getX() - playerShip.getX(), bullet.getY() - playerShip.getY()) < playerShip.getSize() / 2) {
-                        gameState.loseLife();
-                        logger.info("Player hit by boss bullet!");
-                        if (gameState.isGameOver()) {
-                            triggerGameOver();
-                        }
-                    }
-                }
-            }
-
-            // Handle boss defeat logic
-            if (boss != null && boss.getHealth() <= 0) {
-                gameEntityManager.setBossActive(false);
-                logger.info("Boss defeated!");
-                handleVictory();
-            }
-
-            if (inputController.isCheatModeEnabled()) {
-                activateCheatMode();
-            }
         } else {
             drawGameOver();
         }
     }
 
-    private void drawBossBullets() {
-        if (boss != null) {  // Check if boss is not null
-            List<Bullet> bossBullets = boss.getBossBullets();
-            for (Bullet bullet : bossBullets) {
-                bullet.update(canvas.getWidth(), canvas.getHeight());  // Update bullet's position
-                gc.setFill(Color.YELLOW);  // Boss bullets color
-                gc.fillRect(bullet.getX(), bullet.getY(), 5, 5);  // Draw boss bullet
+    private void startAsteroidAndEnemySpawning() {
+        Timer spawnTimer = new Timer(true);
+
+        // Spawn asteroids every 2 seconds
+        spawnTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                gameEntityManager.continuousSpawnAsteroids(gc);  // Updated to use continuous spawning
             }
-        }
+        }, 0, 2000);
+
+        // Spawn enemies every 5 seconds
+        spawnTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                gameEntityManager.continuousSpawnEnemyShips();  // Updated to use continuous spawning
+            }
+        }, 0, 5000);
     }
 
-    // New method to handle victory or next level transition
-    private void handleVictory() {
-        // Move to next level or trigger victory condition
-        gameState.nextLevel();
-        logger.info("Victory! Moving to next level.");
-    }
 
     private void fireBullet() {
         Bullet bullet = playerShip.fireBullet();
         if (bullet != null) {
-            gameEntityManager.addBullet(bullet);  // Add bullet to level manager for global updates
+            gameEntityManager.addBullet(bullet);
             laserSound.play();
             logger.info("Bullet fired from position: (" + bullet.getX() + ", " + bullet.getY() + ")");
         }
@@ -217,31 +157,28 @@ public class AsteroidGame extends Application {
     }
 
     private void clearScreen() {
-        // Draw the background image
         gc.drawImage(backgroundImage, 0, 0, canvas.getWidth(), canvas.getHeight());
     }
 
     private void updatePlayerShip() {
         if (inputController.isLeftPressed()) playerShip.rotateLeft();
         if (inputController.isRightPressed()) playerShip.rotateRight();
-        // Play thrust sound when moving forward
         if (inputController.isUpPressed()) {
             playerShip.thrustForward();
             if (!thrustSound.isPlaying()) {
                 thrustSound.play();
             }
         } else {
-            playerShip.stopThrusting();  // Stop showing thrust effect when not pressing up
-            thrustSound.stop();  // Stop sound when not pressing thrust
-            playerShip.decelerate();  // Decelerate when UP key is not pressed
+            playerShip.stopThrusting();
+            thrustSound.stop();
+            playerShip.decelerate();
         }
-        // Apply backward thrust when DOWN key is pressed
         if (inputController.isDownPressed()) {
             playerShip.thrustBackward();
         }
 
-        playerShip.move();  // Apply movement changes
-        playerShip.draw(gc);  // Draw the ship and the flames (if thrusting)
+        playerShip.move();
+        playerShip.draw(gc);
         playerShip.handleScreenEdges(canvas.getWidth(), canvas.getHeight());
     }
 
@@ -250,8 +187,6 @@ public class AsteroidGame extends Application {
         gc.setFont(new Font(20));
         gc.fillText("Score: " + gameState.getScore(), 20, 30);
         gc.fillText("Lives: " + gameState.getLives(), 20, 60);
-        gc.fillText("Level: " + gameState.getLevel(), 20, 90);
-        gc.fillText("Player Health: " + playerShip.getHealth(), 20, 120);
     }
 
     private void triggerGameOver() {
@@ -266,37 +201,17 @@ public class AsteroidGame extends Application {
         gc.fillText("Game Over", canvas.getWidth() / 2 - 120, canvas.getHeight() / 2 - 50);
 
         gc.setFont(new Font(30));
-        gc.fillText("Final Level: " + gameState.getLevel(), canvas.getWidth() / 2 - 100, canvas.getHeight() / 2 + 10);
         gc.fillText("Click to Retry", canvas.getWidth() / 2 - 100, canvas.getHeight() / 2 + 50);
     }
 
-    private void activateCheatMode() {
-        if (!cheatModeActivated) {
-            gameEntityManager.clearAsteroids();
-            logger.info("Cheat mode activated! Skipping to boss stage.");
-
-            if (!gameEntityManager.isBossActive()) {
-                boss = gameEntityManager.spawnBoss();  // Ensure the correct boss instance is used
-                logger.info("Cheat mode: Boss spawned directly at position: (" + boss.getX() + ", " + boss.getY() + ")");
-            }
-            cheatModeActivated = true;
-        }
-    }
-
     private void restartGame() {
-        gameOver = false;  // Reset this early
-        gameState.reset();  // Reset score, level, lives
-        playerShip.reset(400, 300, 5); // Reset spaceship position and health
-        playerShip.resetHealth();  // Reset player health to 100
-        gameEntityManager.clearAsteroids();  // Clear asteroids
-        gameEntityManager.clearBullets();  // Clear bullets
-        gameEntityManager.clearEnemyBullets();
-        gameEntityManager.setBossActive(false);  // Reset boss flag
-        boss = null;  // Reset boss instance
-        gameEntityManager.clearEnemyShips();  // Clear enemy ships
-        cheatModeActivated = false;  // Reset cheat mode
-        gameEntityManager.spawnAsteroidsForLevel(gameState.getLevel(), gc);  // Spawn new asteroids
-        levelProgressManager.resetLevelTimer();  // Reset timer for the new level
+        gameOver = false;
+        gameState.reset();
+        playerShip.reset(400, 300, 5);
+        playerShip.resetHealth();
+        gameEntityManager.clearAsteroids();
+        gameEntityManager.clearBullets();
+        gameEntityManager.clearEnemyShips();
         logger.info("Game restarted.");
     }
 }

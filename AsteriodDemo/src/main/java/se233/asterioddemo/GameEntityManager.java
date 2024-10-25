@@ -19,6 +19,11 @@ public class GameEntityManager {
     private Random random;
     private long lastBulletTime = 0;
     private final long bulletCooldown = 300;  // Time between bullets in milliseconds
+    private long lastAsteroidSpawnTime = 0;
+    private long lastEnemySpawnTime = 0;
+    private final long asteroidSpawnCooldown = 1000;  // Time between asteroid spawns in milliseconds
+    private final long enemySpawnCooldown = 5000;  // Time between enemy spawns in milliseconds
+    private final int asteroidsPerSpawn = 3;  // Spawn 3 asteroids at a time
 
     public GameEntityManager() {
         this.asteroids = new ArrayList<>();
@@ -41,23 +46,60 @@ public class GameEntityManager {
         asteroids.clear();
     }
 
-    public void spawnEnemiesForLevel(int level, double screenWidth, double screenHeight) {
-        int numEnemies = level;  // More enemies each level
-        for (int i = 0; i < numEnemies; i++) {
-            // Spawn enemies randomly
-            double x = random.nextDouble() * screenWidth;
-            double y = random.nextDouble() * screenHeight;
-            double speed = 1 + random.nextDouble() * 2;  // Vary speed
-            enemyShips.add(new EnemyShip(x, y, speed, 30, Math.toRadians(random.nextInt(360))));
+    // Continuous asteroid spawning logic
+    public void continuousSpawnAsteroids(GraphicsContext gc) {
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastAsteroidSpawnTime >= asteroidSpawnCooldown) {
+            spawnAsteroid(gc);
+            lastAsteroidSpawnTime = currentTime;
         }
     }
 
-    public void spawnEnemyShipsForLevel(int level) {
-        int numEnemies = Math.min(level, 5);  // Max 5 enemy ships
-        for (int i = 0; i < numEnemies; i++) {
-            enemyShips.add(new EnemyShip(random.nextInt(800), random.nextInt(600), 2, 30, Math.PI / 2));
+    // Continuous enemy ship spawning logic
+    public void continuousSpawnEnemyShips() {
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastEnemySpawnTime >= enemySpawnCooldown) {
+            spawnEnemyShip();
+            lastEnemySpawnTime = currentTime;
         }
     }
+
+    // Updated method to spawn multiple asteroids
+    private void spawnAsteroid(GraphicsContext gc) {
+        for (int i = 0; i < asteroidsPerSpawn; i++) {
+            double asteroidSize;
+            int asteroidPoints;
+            double speed = random.nextDouble() * 2 + 1;
+
+            double sizeType = random.nextDouble();
+            if (sizeType < 0.33) {
+                asteroidSize = 20;
+                asteroidPoints = 1;
+            } else if (sizeType < 0.66) {
+                asteroidSize = 40;
+                asteroidPoints = 2;
+            } else {
+                asteroidSize = 60;
+                asteroidPoints = 3;
+            }
+
+            asteroids.add(new Asteroid(
+                    random.nextInt((int) gc.getCanvas().getWidth()),
+                    random.nextInt((int) gc.getCanvas().getHeight()),
+                    speed, asteroidSize, asteroidPoints, false
+            ));
+        }
+    }
+
+    // Spawns a single enemy ship
+    private void spawnEnemyShip() {
+        double x = random.nextInt(800);  // Assuming screen width of 800
+        double y = random.nextInt(600);  // Assuming screen height of 600
+        double speed = 1 + random.nextDouble() * 2;  // Vary speed
+        enemyShips.add(new EnemyShip(x, y, speed, 30, Math.PI / 2));
+    }
+
+
 
     public void updateAndDrawEnemyBullets(GraphicsContext gc, double screenWidth, double screenHeight) {
         Iterator<Bullet> bulletIterator = enemyBullets.iterator();
@@ -91,8 +133,6 @@ public class GameEntityManager {
             }
         }
     }
-
-
 
     public boolean areEnemiesCleared() {
         return enemyShips.isEmpty();
@@ -234,31 +274,6 @@ public class GameEntityManager {
         }
     }
 
-
-    // Spawn asteroids for the level
-    public void spawnAsteroidsForLevel(int level, GraphicsContext gc) {
-        int numAsteroids = level * 5;  // Increase number of asteroids with each level
-        for (int i = 0; i < numAsteroids; i++) {
-            double asteroidSize;
-            int asteroidPoints;
-            double speed = random.nextDouble() * 2 + 1;
-
-            // Randomize asteroid size
-            double sizeType = random.nextDouble();
-            if (sizeType < 0.33) {
-                asteroidSize = 20;
-                asteroidPoints = 1;
-            } else if (sizeType < 0.66) {
-                asteroidSize = 40;
-                asteroidPoints = 2;
-            } else {
-                asteroidSize = 60;
-                asteroidPoints = 3;
-            }
-
-            asteroids.add(new Asteroid(random.nextInt((int) gc.getCanvas().getWidth()), random.nextInt((int) gc.getCanvas().getHeight()), speed, asteroidSize, asteroidPoints, false));
-        }
-    }
 
     // Update and draw asteroids
     public void updateAndDrawAsteroids(GraphicsContext gc) {
