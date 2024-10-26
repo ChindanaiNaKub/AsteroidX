@@ -10,6 +10,7 @@ public class Bullet {
     private Image bulletImage;
     private final double size = 10.0;
     private SpriteLoader spriteLoader;
+    private int damage; // Add damage field
 
     // Define bullet sprite names from your sprite sheet
     private static final String[] BULLET_SPRITES = {
@@ -27,25 +28,18 @@ public class Bullet {
             "laserRed13.png", "laserRed14.png", "laserRed15.png", "laserRed16.png"
     };
 
-    // Original constructor with random sprite selection
-    public Bullet(double startX, double startY, double angle, SpriteLoader spriteLoader) {
-        this.x = startX;
-        this.y = startY;
-        this.angle = angle;
-        this.spriteLoader = spriteLoader;
-
-        // Randomly select a bullet sprite from the available ones
-        String selectedBulletSprite = BULLET_SPRITES[(int) (Math.random() * BULLET_SPRITES.length)];
-        this.bulletImage = spriteLoader.getSprite(selectedBulletSprite);
-    }
-
     // Overloaded constructor to specify a particular bullet sprite
-    public Bullet(double startX, double startY, double angle, SpriteLoader spriteLoader, String spriteName) {
+    public Bullet(double startX, double startY, double angle, SpriteLoader spriteLoader, String spriteName,int damage) {
         this.x = startX;
         this.y = startY;
         this.angle = angle;
         this.spriteLoader = spriteLoader;
         this.bulletImage = spriteLoader.getSprite(spriteName);  // Use specified sprite
+        this.damage = damage;
+    }
+
+    public int getDamage() {
+        return damage;
     }
 
     // Basic movement method

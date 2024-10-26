@@ -54,7 +54,7 @@ public class EnemyShip extends Character {
     // Shooting logic towards the player
     public Bullet shootTowards(double playerX, double playerY) {
         double angleToPlayer = Math.atan2(playerY - y, playerX - x);
-        return new Bullet(x, y, angleToPlayer, spriteLoader,"laserRed01.png");  // Shoot bullet towards player
+        return new Bullet(x, y, angleToPlayer, spriteLoader,"laserRed01.png",10);  // Shoot bullet towards player
     }
 
     public boolean canShoot() {
