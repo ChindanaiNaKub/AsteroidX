@@ -186,6 +186,7 @@ public class AsteroidGame extends Application {
                 gameEntityManager.updateAndDrawEnemyShips(gc, playerShip.getX(), playerShip.getY());
                 gameEntityManager.updateAndDrawEnemyBullets(gc, canvas.getWidth(), canvas.getHeight());
                 gameEntityManager.updateAndDrawAsteroids(gc);
+                gameEntityManager.updateAndDrawEnemyShipExplosions(gc);
                 checkBossStage();
                 checkCheatMode();
             } else {

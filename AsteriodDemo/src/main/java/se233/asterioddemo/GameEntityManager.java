@@ -34,6 +34,9 @@ public class GameEntityManager {
 
     private final SpriteLoader spriteLoader;
 
+    private List<ShipExplosionEffect> shipExplosions = new ArrayList<>();
+
+
     public GameEntityManager(SpriteLoader spriteLoader) {
         this.asteroids = new ArrayList<>();
         this.explosions = new ArrayList<>();
@@ -43,6 +46,18 @@ public class GameEntityManager {
         this.random = new Random();
         this.bossActive = false;
         this.spriteLoader = spriteLoader;
+    }
+
+    public void updateAndDrawEnemyShipExplosions(GraphicsContext gc) {
+        Iterator<ShipExplosionEffect> iterator = shipExplosions.iterator();
+        while (iterator.hasNext()) {
+            ShipExplosionEffect explosion = iterator.next();
+            explosion.update();
+            explosion.draw(gc);
+            if (!explosion.isActive()) {
+                iterator.remove();
+            }
+        }
     }
 
     public void updateAndDrawExplosions(GraphicsContext gc) {
@@ -312,12 +327,17 @@ public class GameEntityManager {
         for (Bullet bullet : bullets) {
             for (EnemyShip enemy : enemyShips) {
                 if (isColliding(bullet, enemy)) {
-                    enemy.takeDamage(10);
-                    bulletsToRemove.add(bullet);
+                    enemy.takeDamage(10);  // Reduce enemy health
+                    bulletsToRemove.add(bullet);  // Mark bullet for removal
 
                     if (enemy.getHealth() <= 0) {
-                        enemiesToRemove.add(enemy);
-                        gameState.addScore(2);
+                        enemiesToRemove.add(enemy);  // Mark enemy for removal
+                        gameState.addScore(50);  // Add points for destroying an enemy
+
+                        // Trigger explosion at enemy's position
+                        ShipExplosionEffect explosion = new ShipExplosionEffect(20);
+                        explosion.createExplosion(enemy.getX(), enemy.getY(), enemy.getSize(), "standard");
+                        shipExplosions.add(explosion);
                     }
                 }
             }
@@ -326,6 +346,7 @@ public class GameEntityManager {
         bullets.removeAll(bulletsToRemove);
         enemyShips.removeAll(enemiesToRemove);
     }
+
 
     private void checkPlayerBulletAsteroidCollisions(GameState gameState, Logger logger) {
         List<Bullet> bulletsToRemove = new ArrayList<>();
