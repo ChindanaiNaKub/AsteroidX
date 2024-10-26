@@ -116,9 +116,9 @@ public class AsteroidGame extends Application {
 
     private void setupGameScene(Stage primaryStage) {
         Pane gameRoot = new Pane();
-        canvas = new Canvas(1680, 900); // Updated to 1680x900 for 720p resolution
+        canvas = new Canvas(1280, 720); // Updated to 1680x900 for 720p resolution
         gameRoot.getChildren().add(canvas);
-        gameScene = new Scene(gameRoot, 1680, 900); // Updated to match the new resolution
+        gameScene = new Scene(gameRoot, 1280, 720); // Updated to match the new resolution
 
         gc = canvas.getGraphicsContext2D();
         backgroundImage = new Image(getClass().getResource("/sprite/background.png").toExternalForm());
@@ -269,6 +269,9 @@ public class AsteroidGame extends Application {
         if (inputController.isDownPressed()) playerShip.moveVerticallyDown();
 
         playerShip.rotateToMouse(inputController.getMouseX(), inputController.getMouseY());
+
+        // Update the shield status
+        playerShip.updateShield();
 
         playerShip.move();
         playerShip.draw(gc);
