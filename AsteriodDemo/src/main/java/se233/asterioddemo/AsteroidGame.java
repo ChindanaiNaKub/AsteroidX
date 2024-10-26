@@ -33,6 +33,8 @@ public class AsteroidGame extends Application {
     private AudioClip hitSound;
     private AudioClip explodeSound;
     private AudioClip thrustSound;
+    private AudioClip bossMusic;
+
 
     static final Logger logger = Logger.getLogger(AsteroidGame.class.getName());
 
@@ -46,6 +48,9 @@ public class AsteroidGame extends Application {
             "numeral3.png", "numeral4.png", "numeral5.png",
             "numeral6.png", "numeral7.png", "numeral8.png", "numeral9.png"
     };
+
+    private static final int BOSS_TRIGGER_SCORE = 1000; // Score needed to trigger boss
+
 
     @Override
     public void start(Stage primaryStage) {
@@ -85,6 +90,7 @@ public class AsteroidGame extends Application {
         hitSound = new AudioClip(getClass().getResource("/sounds/hit.m4a").toExternalForm());
         explodeSound = new AudioClip(getClass().getResource("/sounds/explode.m4a").toExternalForm());
         thrustSound = new AudioClip(getClass().getResource("/sounds/thrust.m4a").toExternalForm());
+        bossMusic = new AudioClip(getClass().getResource("/sounds/boss.mp3").toExternalForm());
 
         // Set up continuous spawning of asteroids and enemies
         startAsteroidAndEnemySpawning();
@@ -103,6 +109,7 @@ public class AsteroidGame extends Application {
                 restartGame();
             }
         });
+
     }
 
     private void updateGame() {
@@ -111,11 +118,18 @@ public class AsteroidGame extends Application {
         if (!gameOver) {
             updatePlayerShip();
 
-            // Update and draw bullets (player and enemy)
-            gameEntityManager.updateAndDrawBullets(gc, canvas.getWidth(), canvas.getHeight());
-            gameEntityManager.updateAndDrawEnemyShips(gc, playerShip.getX(), playerShip.getY());
-            gameEntityManager.updateAndDrawEnemyBullets(gc, canvas.getWidth(), canvas.getHeight());
-            gameEntityManager.updateAndDrawAsteroids(gc);
+            if (!gameEntityManager.isBossActive()) {
+                // Normal game updates
+                gameEntityManager.updateAndDrawBullets(gc, canvas.getWidth(), canvas.getHeight());
+                gameEntityManager.updateAndDrawEnemyShips(gc, playerShip.getX(), playerShip.getY());
+                gameEntityManager.updateAndDrawEnemyBullets(gc, canvas.getWidth(), canvas.getHeight());
+                gameEntityManager.updateAndDrawAsteroids(gc);
+                checkBossStage(); // Check if it's time for boss
+                checkCheatMode();
+            } else {
+                // Boss stage updates
+                gameEntityManager.updateAndDrawBoss(gc, playerShip, gameState, hitSound, logger);
+            }
 
             drawUI(gc, spriteLoader, gameState);
             checkCollisions();
@@ -132,16 +146,30 @@ public class AsteroidGame extends Application {
         }
     }
 
+    private void checkBossStage() {
+        if (!gameEntityManager.isBossActive() && gameState.getScore() >= BOSS_TRIGGER_SCORE) {
+            gameEntityManager.startBossStage(bossMusic);
+        }
+    }
+
+    private void checkCheatMode() {
+        if (inputController.isCheatModeEnabled() && !gameEntityManager.isBossActive()) {
+            // Activate boss stage instantly when cheat mode is enabled
+            gameEntityManager.startBossStage(bossMusic);
+            logger.info("Cheat mode activated: Boss stage started.");
+        }
+    }
+
     private void startAsteroidAndEnemySpawning() {
         Timer spawnTimer = new Timer(true);
 
-        // Spawn asteroids every 2 seconds
+        // Spawn asteroids every 4 seconds
         spawnTimer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
                 gameEntityManager.continuousSpawnAsteroids(gc);  // Updated to use continuous spawning
             }
-        }, 0, 2000);
+        }, 0, 4000);
 
         // Spawn enemies every 5 seconds
         spawnTimer.scheduleAtFixedRate(new TimerTask() {
@@ -151,7 +179,6 @@ public class AsteroidGame extends Application {
             }
         }, 0, 5000);
     }
-
 
     private void fireBullet(InputController inputController) {
         Bullet bullet = playerShip.fireBullet(inputController);  // Pass InputController to determine bullet mode
@@ -195,7 +222,6 @@ public class AsteroidGame extends Application {
     }
 
 
-    // Method to draw the UI (score and lives)
     private void drawUI(GraphicsContext gc, SpriteLoader spriteLoader, GameState gameState) {
         gc.setFill(Color.WHITE);
         gc.setFont(new Font(20));
@@ -208,12 +234,33 @@ public class AsteroidGame extends Application {
         double screenWidth = gc.getCanvas().getWidth();
         drawNumber(gc, gameState.getScore(), screenWidth - 100, 20, spriteLoader);
 
-        // Draw bullet mode in the specified position (bottom center)
-        String bulletMode = playerShip.getBulletMode(); // Get the current bullet mode
-        gc.setFill(Color.WHITE); // Set color to red for better visibility
-        gc.setFont(new Font(15)); // Set font size
-        gc.fillText("Bullet Mode: " + bulletMode, screenWidth / 2 - 60, canvas.getHeight() - 30); // Adjust position as needed
+        // Draw bullet mode
+        String bulletMode = playerShip.getBulletMode();
+        gc.fillText("Bullet Mode: " + bulletMode, screenWidth / 2 - 60, canvas.getHeight() - 30);
+
+        // If the boss is active, draw its health bar
+        if (gameEntityManager.getBoss() != null) {
+            double bossHealthWidth = 400;
+            double bossHealthHeight = 20;
+            double bossHealthX = (screenWidth - bossHealthWidth) / 2;
+
+            // Background of health bar
+            gc.setFill(Color.DARKGRAY);
+            gc.fillRect(bossHealthX, 10, bossHealthWidth, bossHealthHeight);
+
+            // Actual health
+            gc.setFill(Color.RED);
+            gc.fillRect(bossHealthX, 10,
+                    bossHealthWidth * (gameEntityManager.getBoss().getHealth() / 100.0), bossHealthHeight);
+
+            // Boss health text
+            gc.setFill(Color.WHITE);
+            gc.setFont(new Font(15));
+            gc.fillText("BOSS HP: " + gameEntityManager.getBoss().getHealth() + "/100",
+                    bossHealthX + bossHealthWidth / 2 - 50, 45);
+        }
     }
+
     private void triggerGameOver() {
         gameOver = true;
         explodeSound.play();

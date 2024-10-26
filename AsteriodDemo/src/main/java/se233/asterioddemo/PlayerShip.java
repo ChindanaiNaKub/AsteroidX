@@ -4,6 +4,9 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class PlayerShip extends Character {
     private int health = 100;
     private double angle;
@@ -18,6 +21,7 @@ public class PlayerShip extends Character {
     private final long bulletCooldown = 300;
     private SpriteLoader spriteLoader;
     private String bulletMode = "default";
+    private static List<Bullet> bullets = new ArrayList<>();
 
     public PlayerShip(double x, double y, double speed, double size, SpriteLoader spriteLoader) {
         super(x, y, speed, size);
@@ -119,10 +123,14 @@ public class PlayerShip extends Character {
                     bulletSprite = "laserBlue07.png";
                     break;
             }
-            return new Bullet(bulletStartX, bulletStartY, this.getAngle() - Math.PI / 2, spriteLoader, bulletSprite);
+
+            Bullet bullet = new Bullet(bulletStartX, bulletStartY, this.getAngle() - Math.PI / 2, spriteLoader, bulletSprite);
+            bullets.add(bullet);  // Add the new bullet to the list
+            return bullet;
         }
         return null;
     }
+
 
     public void reduceHealth(int amount) {
         this.health -= amount;
@@ -241,5 +249,9 @@ public class PlayerShip extends Character {
 
     public String getBulletMode() {
         return bulletMode;
+    }
+
+    public static List<Bullet> getBullets() {
+        return bullets;
     }
 }

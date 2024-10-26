@@ -44,13 +44,30 @@ public class GameEntityManager {
         this.spriteLoader = spriteLoader; // Pass the SpriteLoader instance here
     }
 
-    public void continuousSpawnAsteroids(GraphicsContext gc) {
-        long currentTime = System.currentTimeMillis();
-        if (currentTime - lastAsteroidSpawnTime >= ASTEROID_SPAWN_COOLDOWN) {
-            for (int i = 0; i < ASTEROIDS_PER_SPAWN; i++) {
-                spawnSingleAsteroid(gc);
+    public void startBossStage(AudioClip bossMusic) {
+        if (!bossActive) {  // Only start if not already active
+            logger.info("Attempting to start boss stage...");
+            bossActive = true;
+            boss = new Boss(400, 100, 2.0, 91, spriteLoader);
+            clearAll();  // Clear other entities but don't deactivate the boss
+            if (bossMusic != null) {
+                bossMusic.play();
             }
-            lastAsteroidSpawnTime = currentTime;
+            logger.info("Boss created successfully");
+        } else {
+            logger.info("Boss is already active, skipping creation.");
+        }
+    }
+
+    public void continuousSpawnAsteroids(GraphicsContext gc) {
+        if (!bossActive) {
+            long currentTime = System.currentTimeMillis();
+            if (currentTime - lastAsteroidSpawnTime >= ASTEROID_SPAWN_COOLDOWN) {
+                for (int i = 0; i < ASTEROIDS_PER_SPAWN; i++) {
+                    spawnSingleAsteroid(gc);
+                }
+                lastAsteroidSpawnTime = currentTime;
+            }
         }
     }
 
@@ -69,6 +86,14 @@ public class GameEntityManager {
         );
 
         asteroids.add(asteroid);
+    }
+
+    public boolean isBossActive() {
+        return bossActive;
+    }
+
+    public Boss getBoss() {
+        return boss;
     }
 
     private static class AsteroidSize {
@@ -93,10 +118,12 @@ public class GameEntityManager {
     }
 
     public void continuousSpawnEnemyShips() {
-        long currentTime = System.currentTimeMillis();
-        if (currentTime - lastEnemySpawnTime >= ENEMY_SPAWN_COOLDOWN) {
-            spawnEnemyShip();
-            lastEnemySpawnTime = currentTime;
+        if (!bossActive) {
+            long currentTime = System.currentTimeMillis();
+            if (currentTime - lastEnemySpawnTime >= ENEMY_SPAWN_COOLDOWN) {
+                spawnEnemyShip();
+                lastEnemySpawnTime = currentTime;
+            }
         }
     }
 
@@ -108,6 +135,29 @@ public class GameEntityManager {
         double angle = Math.PI / 2;  // Define or randomize the angle
 
         enemyShips.add(new EnemyShip(x, y, speed, size, angle, spriteLoader));
+    }
+
+    public void updateAndDrawBoss(GraphicsContext gc, PlayerShip playerShip, GameState gameState, AudioClip hitSound, Logger logger) {
+        if (bossActive && boss != null) {
+            boss.move();
+            boss.attack(spriteLoader);
+            boss.draw(gc);
+
+            // Update boss bullets
+            Iterator<Bullet> bulletIterator = boss.getBossBullets().iterator();
+            while (bulletIterator.hasNext()) {
+                Bullet bullet = bulletIterator.next();
+                bullet.move();
+
+                if (bullet.isOffScreen(gc.getCanvas().getWidth(), gc.getCanvas().getHeight())) {
+                    bulletIterator.remove();
+                } else {
+                    bullet.draw(gc);
+                }
+            }
+        } else {
+            logger.severe("Boss object is null in updateAndDrawBoss!");
+        }
     }
 
     public void updateAndDrawBullets(GraphicsContext gc, double screenWidth, double screenHeight) {
@@ -165,17 +215,47 @@ public class GameEntityManager {
         }
     }
 
-    public void checkCollisions(GameState gameState, PlayerShip playerShip, AudioClip hitSound, AudioClip explodeSound, Logger logger) {
-        checkPlayerEnemyBulletCollisions(playerShip, gameState);
-        checkPlayerEnemyShipCollisions(playerShip, gameState, hitSound, explodeSound);
-        checkPlayerBulletEnemyCollisions(gameState);
-        checkPlayerBulletAsteroidCollisions(gameState, logger);
-        checkPlayerAsteroidCollisions(playerShip, gameState, hitSound, explodeSound);
 
-        if (boss != null) {
-            checkBossCollisions(playerShip, gameState, logger);
+    public void checkCollisions(GameState gameState, PlayerShip playerShip, AudioClip hitSound, AudioClip explodeSound, Logger logger) {
+        if (!bossActive) {
+            checkPlayerEnemyBulletCollisions(playerShip, gameState);
+            checkPlayerEnemyShipCollisions(playerShip, gameState, hitSound, explodeSound);
+            checkPlayerBulletEnemyCollisions(gameState);
+            checkPlayerBulletAsteroidCollisions(gameState, logger);
+            checkPlayerAsteroidCollisions(playerShip, gameState, hitSound, explodeSound);
+        }
+
+        if (bossActive && boss != null) {
+            checkBossCollisions(playerShip, gameState, logger, explodeSound);
         }
     }
+    private void checkPlayerBulletBossCollisions(PlayerShip playerShip, GameState gameState, Logger logger, AudioClip hitSound) {
+        if (boss != null && bossActive) {
+            List<Bullet> bulletsToRemove = new ArrayList<>();
+            for (Bullet bullet : playerShip.getBullets()) {
+                if (isColliding(bullet, boss)) {
+                    boss.takeDamage();
+                    bulletsToRemove.add(bullet);
+                    hitSound.play();
+                    logger.info("Boss hit! Boss health: " + boss.getHealth());
+
+                    if (boss.getHealth() <= 0) {
+                        defeatBoss(gameState, logger);
+                    }
+                }
+            }
+            playerShip.getBullets().removeAll(bulletsToRemove);
+        }
+    }
+
+    public void defeatBoss(GameState gameState, Logger logger) {
+        bossActive = false;
+        boss = null;
+        gameState.addScore(500); // Example score for defeating the boss
+        logger.info("Boss defeated! Bonus score added.");
+    }
+
+
 
     private void checkPlayerEnemyBulletCollisions(PlayerShip playerShip, GameState gameState) {
         Iterator<Bullet> bulletIter = enemyBullets.iterator();
@@ -281,18 +361,21 @@ public class GameEntityManager {
     }
 
 
-    private void checkBossCollisions(PlayerShip playerShip, GameState gameState, Logger logger) {
+    private void checkBossCollisions(PlayerShip playerShip, GameState gameState, Logger logger, AudioClip hitSound) {
         if (boss != null) {
+            // Play hit sound when boss is active
+            hitSound.play();
+
             // Check for boss bullets hitting player
             List<Bullet> bossBulletsToRemove = new ArrayList<>();
             for (Bullet bossBullet : boss.getBossBullets()) {
                 if (isColliding(bossBullet, playerShip)) {
                     playerShip.reduceHealth(20);  // Reduce player health on hit
-                    bossBulletsToRemove.add(bossBullet);  // Remove bullet
+                    bossBulletsToRemove.add(bossBullet);
                     logger.info("Player hit by boss bullet! Player health: " + playerShip.getHealth());
 
                     if (playerShip.getHealth() <= 0) {
-                        gameState.setGameOver(true);  // Set game over if player health is 0
+                        gameState.setGameOver(true);
                     }
                 }
             }
@@ -300,20 +383,18 @@ public class GameEntityManager {
 
             // Check for player bullets hitting the boss
             List<Bullet> bulletsToRemove = new ArrayList<>();
-            for (Bullet bullet : bullets) {
+            for (Bullet bullet : playerShip.getBullets()) {
                 if (isColliding(bullet, boss)) {
-                    boss.takeDamage();  // Reduce boss health
-                    bulletsToRemove.add(bullet);  // Remove bullet
+                    boss.takeDamage();
+                    bulletsToRemove.add(bullet);
                     logger.info("Boss hit! Boss health: " + boss.getHealth());
 
                     if (boss.getHealth() <= 0) {
-                        boss = null;  // Remove boss
-                        gameState.addScore(100);  // Add points for defeating boss
-                        logger.info("Boss defeated!");
+                        defeatBoss(gameState, logger);  // Call defeat method when boss health reaches zero
                     }
                 }
             }
-            bullets.removeAll(bulletsToRemove);
+            playerShip.getBullets().removeAll(bulletsToRemove);
         }
     }
 
@@ -363,16 +444,16 @@ public class GameEntityManager {
     public void clearEnemyShips() {
         enemyShips.clear();
     }
-
+a
     public void clearAll() {
         asteroids.clear();
         bullets.clear();
         enemyShips.clear();
         enemyBullets.clear();
+        PlayerShip.getBullets().clear();
         if (boss != null) {
             boss.getBossBullets().clear();
         }
-        boss = null;
-        bossActive = false;
     }
+
 }

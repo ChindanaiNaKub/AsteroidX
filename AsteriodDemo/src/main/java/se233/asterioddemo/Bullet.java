@@ -48,10 +48,17 @@ public class Bullet {
         this.bulletImage = spriteLoader.getSprite(spriteName);  // Use specified sprite
     }
 
-    public void update(double screenWidth, double screenHeight) {
+    // Basic movement method
+    public void move() {
         x += Math.cos(angle) * speed;
         y += Math.sin(angle) * speed;
+    }
 
+    // Main update method that handles movement and screen wrapping
+    public void update(double screenWidth, double screenHeight) {
+        move();
+
+        // Wrap around screen edges
         if (x < 0) x = screenWidth;
         if (x > screenWidth) x = 0;
         if (y < 0) y = screenHeight;
@@ -66,6 +73,7 @@ public class Bullet {
 
     public double getY() { return y; }
 
+    // This method is now only used for temporary off-screen checking if needed
     public boolean isOffScreen(double screenWidth, double screenHeight) {
         return (x < 0 || x > screenWidth || y < 0 || y > screenHeight);
     }
