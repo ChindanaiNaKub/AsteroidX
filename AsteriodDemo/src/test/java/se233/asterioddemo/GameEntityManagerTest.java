@@ -21,8 +21,15 @@ class GameEntityManagerTest {
 
     @Test
     void testBulletCreation() {
+        // Create a mock or stub of InputController
+        InputController mockInputController = mock(InputController.class);
+
+        // Simulate the default bullet mode for the test
+        when(mockInputController.isDefaultMode()).thenReturn(true);
+
         PlayerShip playerShip = new PlayerShip(400, 300, 5.0, 40.0, mockSpriteLoader);
-        Bullet bullet = playerShip.fireBullet();
+        Bullet bullet = playerShip.fireBullet(mockInputController); // Pass the mock InputController
+
         assertNotNull(bullet, "Should create bullet when firing");
     }
 

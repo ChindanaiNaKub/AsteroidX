@@ -17,6 +17,7 @@ public class PlayerShip extends Character {
     private long lastBulletTime = 0;
     private final long bulletCooldown = 300;
     private SpriteLoader spriteLoader;
+    private String bulletMode = "default";
 
     public PlayerShip(double x, double y, double speed, double size, SpriteLoader spriteLoader) {
         super(x, y, speed, size);
@@ -88,14 +89,37 @@ public class PlayerShip extends Character {
     }
 
     // Method to fire bullets from the ship
-    public Bullet fireBullet() {
+    public Bullet fireBullet(InputController inputController) {
         long currentTime = System.currentTimeMillis();
         if (currentTime - lastBulletTime >= bulletCooldown) {
             lastBulletTime = currentTime;
             double shipTipOffset = this.getSize() / 2;
             double bulletStartX = this.getX() + Math.cos(this.getAngle() - Math.PI / 2) * shipTipOffset;
             double bulletStartY = this.getY() + Math.sin(this.getAngle() - Math.PI / 2) * shipTipOffset;
-            return new Bullet(bulletStartX, bulletStartY, this.getAngle() - Math.PI / 2, spriteLoader);
+
+            // Determine bullet mode based on input
+            if (inputController.isShurikenMode()) {
+                bulletMode = "shuriken";
+            } else if (inputController.isPluseMode()) {
+                bulletMode = "pluse";
+            } else if (inputController.isDefaultMode()) {
+                bulletMode = "default";
+            }
+
+            // Select the appropriate bullet sprite based on the current mode
+            String bulletSprite;
+            switch (bulletMode) {
+                case "shuriken":
+                    bulletSprite = "laserBlue11.png";
+                    break;
+                case "pluse":
+                    bulletSprite = "laserBlue08.png";
+                    break;
+                default:
+                    bulletSprite = "laserBlue07.png";
+                    break;
+            }
+            return new Bullet(bulletStartX, bulletStartY, this.getAngle() - Math.PI / 2, spriteLoader, bulletSprite);
         }
         return null;
     }
@@ -213,5 +237,9 @@ public class PlayerShip extends Character {
 
     public void moveVerticallyDown() {
         y += MAX_SPEED;
+    }
+
+    public String getBulletMode() {
+        return bulletMode;
     }
 }
