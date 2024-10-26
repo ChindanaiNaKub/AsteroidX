@@ -2,7 +2,6 @@ package se233.asterioddemo;
 
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.media.AudioClip;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -41,11 +40,11 @@ public class GameEntityManager {
         this.enemyBullets = new ArrayList<>();
         this.random = new Random();
         this.bossActive = false;
-        this.spriteLoader = spriteLoader; // Pass the SpriteLoader instance here
+        this.spriteLoader = spriteLoader;
     }
 
     public void startBossStage(AudioClip bossMusic) {
-        if (!bossActive) {  // Only start if not already active
+        if (!bossActive) {
             logger.info("Attempting to start boss stage...");
             bossActive = true;
             boss = new Boss(400, 100, 2.0, 91, spriteLoader);
@@ -82,7 +81,7 @@ public class GameEntityManager {
                 size.size,
                 size.points,
                 false,  // Not a split asteroid
-                spriteLoader // Pass the spriteLoader here
+                spriteLoader
         );
 
         asteroids.add(asteroid);
@@ -215,7 +214,6 @@ public class GameEntityManager {
         }
     }
 
-
     public void checkCollisions(GameState gameState, PlayerShip playerShip, AudioClip hitSound, AudioClip explodeSound, Logger logger) {
         if (!bossActive) {
             checkPlayerEnemyBulletCollisions(playerShip, gameState);
@@ -226,9 +224,10 @@ public class GameEntityManager {
         }
 
         if (bossActive && boss != null) {
-            checkBossCollisions(playerShip, gameState, logger, explodeSound);
+            checkBossCollisions(playerShip, gameState, logger, hitSound);
         }
     }
+
     private void checkPlayerBulletBossCollisions(PlayerShip playerShip, GameState gameState, Logger logger, AudioClip hitSound) {
         if (boss != null && bossActive) {
             List<Bullet> bulletsToRemove = new ArrayList<>();
@@ -251,11 +250,9 @@ public class GameEntityManager {
     public void defeatBoss(GameState gameState, Logger logger) {
         bossActive = false;
         boss = null;
-        gameState.addScore(500); // Example score for defeating the boss
+        gameState.addScore(5); // Example score for defeating the boss
         logger.info("Boss defeated! Bonus score added.");
     }
-
-
 
     private void checkPlayerEnemyBulletCollisions(PlayerShip playerShip, GameState gameState) {
         Iterator<Bullet> bulletIter = enemyBullets.iterator();
@@ -277,20 +274,19 @@ public class GameEntityManager {
         while (enemyIter.hasNext()) {
             EnemyShip enemy = enemyIter.next();
             if (isColliding(playerShip, enemy)) {
-                playerShip.reduceHealth(10); // Reduce player health on collision
-                enemyIter.remove();  // Remove enemy ship after collision
-                hitSound.play();  // Play hit sound
+                playerShip.reduceHealth(10);
+                enemyIter.remove();
+                hitSound.play();
                 logger.info("Player hit by EnemyShip! Remaining Health: " + playerShip.getHealth());
 
                 if (playerShip.getHealth() <= 0) {
-                    gameState.setGameOver(true);  // Set game over if health is 0\
+                    gameState.setGameOver(true);
                     logger.warning("Player killed by EnemyShip. Game Over!");
-                    explodeSound.play();  // Play explosion sound
+                    explodeSound.play();
                 }
             }
         }
     }
-
 
     private void checkPlayerBulletEnemyCollisions(GameState gameState) {
         List<Bullet> bulletsToRemove = new ArrayList<>();
@@ -299,12 +295,12 @@ public class GameEntityManager {
         for (Bullet bullet : bullets) {
             for (EnemyShip enemy : enemyShips) {
                 if (isColliding(bullet, enemy)) {
-                    enemy.takeDamage(10);  // Reduce enemy health
-                    bulletsToRemove.add(bullet);  // Mark bullet for removal
+                    enemy.takeDamage(10);
+                    bulletsToRemove.add(bullet);
 
                     if (enemy.getHealth() <= 0) {
-                        enemiesToRemove.add(enemy);  // Mark enemy for removal
-                        gameState.addScore(50);  // Add points for destroying an enemy
+                        enemiesToRemove.add(enemy);
+                        gameState.addScore(2);
                     }
                 }
             }
@@ -314,7 +310,6 @@ public class GameEntityManager {
         enemyShips.removeAll(enemiesToRemove);
     }
 
-
     private void checkPlayerBulletAsteroidCollisions(GameState gameState, Logger logger) {
         List<Bullet> bulletsToRemove = new ArrayList<>();
         List<Asteroid> asteroidsToRemove = new ArrayList<>();
@@ -322,14 +317,14 @@ public class GameEntityManager {
         for (Bullet bullet : bullets) {
             for (Asteroid asteroid : asteroids) {
                 if (isColliding(bullet, asteroid)) {
-                    gameState.addScore(asteroid.getPoints());  // Add points
+                    gameState.addScore(asteroid.getPoints());
                     logger.info("Asteroid destroyed! Score: " + gameState.getScore());
 
-                    List<Asteroid> newAsteroids = asteroid.split();  // Split asteroid
-                    asteroids.addAll(newAsteroids);  // Add smaller asteroids
+                    List<Asteroid> newAsteroids = asteroid.split();
+                    asteroids.addAll(newAsteroids);
 
-                    bulletsToRemove.add(bullet);  // Mark bullet for removal
-                    asteroidsToRemove.add(asteroid);  // Mark asteroid for removal
+                    bulletsToRemove.add(bullet);
+                    asteroidsToRemove.add(asteroid);
                     break;
                 }
             }
@@ -339,33 +334,28 @@ public class GameEntityManager {
         asteroids.removeAll(asteroidsToRemove);
     }
 
-
     private void checkPlayerAsteroidCollisions(PlayerShip playerShip, GameState gameState, AudioClip hitSound, AudioClip explodeSound) {
         Iterator<Asteroid> asteroidIter = asteroids.iterator();
         while (asteroidIter.hasNext()) {
             Asteroid asteroid = asteroidIter.next();
             if (isColliding(playerShip, asteroid)) {
-                gameState.loseLife();  // Reduce player lives
+                gameState.loseLife();
                 logger.warning("Player hit by Asteroid! Lives remaining: " + gameState.getLives());
-                asteroidIter.remove();  // Remove asteroid after collision
-                hitSound.play();  // Play hit sound
+                asteroidIter.remove();
+                hitSound.play();
 
                 if (playerShip.getHealth() <= 0) {
-                    gameState.setGameOver(true);// Set game over if player health is 0
+                    gameState.setGameOver(true);
                     logger.warning("Player killed by Asteroid. Game Over!");
-                    explodeSound.play();  // Play explosion sound
+                    explodeSound.play();
                 }
                 break;
             }
         }
     }
 
-
     private void checkBossCollisions(PlayerShip playerShip, GameState gameState, Logger logger, AudioClip hitSound) {
         if (boss != null) {
-            // Play hit sound when boss is active
-            hitSound.play();
-
             // Check for boss bullets hitting player
             List<Bullet> bossBulletsToRemove = new ArrayList<>();
             for (Bullet bossBullet : boss.getBossBullets()) {
@@ -395,34 +385,33 @@ public class GameEntityManager {
                 }
             }
             playerShip.getBullets().removeAll(bulletsToRemove);
+        } else {
+            logger.warning("checkBossCollisions called but boss is null.");
         }
     }
 
     // Method for Bullet vs Boss collision
     private boolean isColliding(Bullet bullet, Boss boss) {
+        if (boss == null) return false; // Ensure boss is not null before checking collision
         double distance = Math.hypot(bullet.getX() - boss.getX(), bullet.getY() - boss.getY());
         return distance < (bullet.getSize() / 2 + boss.getSize() / 2);
     }
 
-    // Generic method for collision detection between two characters (PlayerShip, EnemyShip, Asteroid, etc.)
     private boolean isColliding(Character entityA, Character entityB) {
         double distance = Math.hypot(entityA.getX() - entityB.getX(), entityA.getY() - entityB.getY());
         return distance < (entityA.getSize() / 2 + entityB.getSize() / 2);
     }
 
-    // Overloaded method for Bullet vs PlayerShip collision
     private boolean isColliding(Bullet bullet, PlayerShip player) {
         double distance = Math.hypot(bullet.getX() - player.getX(), bullet.getY() - player.getY());
-        return distance < (bullet.getRadius() + player.getSize() / 2);  // Adjust based on Bullet's collision size
+        return distance < (bullet.getRadius() + player.getSize() / 2);
     }
 
-    // Overloaded method for Bullet vs EnemyShip collision
     private boolean isColliding(Bullet bullet, EnemyShip enemy) {
         double distance = Math.hypot(bullet.getX() - enemy.getX(), bullet.getY() - enemy.getY());
         return distance < (bullet.getRadius() + enemy.getSize() / 2);
     }
 
-    // Overloaded method for Bullet vs Asteroid collision
     private boolean isColliding(Bullet bullet, Asteroid asteroid) {
         double distance = Math.hypot(bullet.getX() - asteroid.getX(), bullet.getY() - asteroid.getY());
         return distance < (bullet.getRadius() + asteroid.getSize() / 2);
@@ -444,7 +433,7 @@ public class GameEntityManager {
     public void clearEnemyShips() {
         enemyShips.clear();
     }
-a
+
     public void clearAll() {
         asteroids.clear();
         bullets.clear();
@@ -456,4 +445,10 @@ a
         }
     }
 
+    public void setBossActive(boolean active) {
+        this.bossActive = active;
+        if (!active) {
+            this.boss = null; // Ensure that the boss object is set to null when deactivating
+        }
+    }
 }

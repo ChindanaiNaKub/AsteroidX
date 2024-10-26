@@ -110,26 +110,31 @@ public class PlayerShip extends Character {
                 bulletMode = "default";
             }
 
-            // Select the appropriate bullet sprite based on the current mode
+            // Select the appropriate bullet sprite and damage based on the current mode
             String bulletSprite;
+            int damage;
             switch (bulletMode) {
                 case "shuriken":
                     bulletSprite = "laserBlue11.png";
+                    damage = 12; // Shuriken damage
                     break;
                 case "pluse":
                     bulletSprite = "laserBlue08.png";
+                    damage = 15; // Pluse damage
                     break;
                 default:
                     bulletSprite = "laserBlue07.png";
+                    damage = 10; // Default damage
                     break;
             }
 
-            Bullet bullet = new Bullet(bulletStartX, bulletStartY, this.getAngle() - Math.PI / 2, spriteLoader, bulletSprite);
+            Bullet bullet = new Bullet(bulletStartX, bulletStartY, this.getAngle() - Math.PI / 2, spriteLoader, bulletSprite, damage);
             bullets.add(bullet);  // Add the new bullet to the list
             return bullet;
         }
         return null;
     }
+
 
 
     public void reduceHealth(int amount) {

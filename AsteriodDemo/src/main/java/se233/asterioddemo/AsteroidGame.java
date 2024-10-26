@@ -29,12 +29,12 @@ public class AsteroidGame extends Application {
 
     private PlayerShip playerShip;
     private boolean gameOver;
+    private boolean bossDefeated; // Flag to control boss reappearance
     private AudioClip laserSound;
     private AudioClip hitSound;
     private AudioClip explodeSound;
     private AudioClip thrustSound;
     private AudioClip bossMusic;
-
 
     static final Logger logger = Logger.getLogger(AsteroidGame.class.getName());
 
@@ -49,8 +49,7 @@ public class AsteroidGame extends Application {
             "numeral6.png", "numeral7.png", "numeral8.png", "numeral9.png"
     };
 
-    private static final int BOSS_TRIGGER_SCORE = 1000; // Score needed to trigger boss
-
+    private static final int BOSS_TRIGGER_SCORE = 17; // Score needed to trigger boss
 
     @Override
     public void start(Stage primaryStage) {
@@ -109,7 +108,6 @@ public class AsteroidGame extends Application {
                 restartGame();
             }
         });
-
     }
 
     private void updateGame() {
@@ -129,6 +127,7 @@ public class AsteroidGame extends Application {
             } else {
                 // Boss stage updates
                 gameEntityManager.updateAndDrawBoss(gc, playerShip, gameState, hitSound, logger);
+                gameEntityManager.updateAndDrawBullets(gc, canvas.getWidth(), canvas.getHeight());
             }
 
             drawUI(gc, spriteLoader, gameState);
@@ -147,7 +146,10 @@ public class AsteroidGame extends Application {
     }
 
     private void checkBossStage() {
-        if (!gameEntityManager.isBossActive() && gameState.getScore() >= BOSS_TRIGGER_SCORE) {
+        // Check if the boss is not active, not already defeated, and the score is a multiple of 17 (17, 34, 51, ...)
+        if (!gameEntityManager.isBossActive() && !bossDefeated &&
+                gameState.getScore() >= BOSS_TRIGGER_SCORE &&
+                gameState.getScore() % BOSS_TRIGGER_SCORE == 0) {
             gameEntityManager.startBossStage(bossMusic);
         }
     }
@@ -221,7 +223,6 @@ public class AsteroidGame extends Application {
         }
     }
 
-
     private void drawUI(GraphicsContext gc, SpriteLoader spriteLoader, GameState gameState) {
         gc.setFill(Color.WHITE);
         gc.setFont(new Font(20));
@@ -237,6 +238,22 @@ public class AsteroidGame extends Application {
         // Draw bullet mode
         String bulletMode = playerShip.getBulletMode();
         gc.fillText("Bullet Mode: " + bulletMode, screenWidth / 2 - 60, canvas.getHeight() - 30);
+
+        // Draw PlayerShip health bar
+        double playerHealthWidth = 200;
+        double playerHealthHeight = 15;
+        double playerHealthX = 20; // Adjust the X position as needed
+        double playerHealthY = 60; // Adjust the Y position as needed
+
+        gc.setFill(Color.DARKGRAY);
+        gc.fillRect(playerHealthX, playerHealthY, playerHealthWidth, playerHealthHeight);
+
+        gc.setFill(Color.GREEN);
+        gc.fillRect(playerHealthX, playerHealthY, playerHealthWidth * (playerShip.getHealth() / 100.0), playerHealthHeight);
+
+        gc.setFill(Color.WHITE);
+        gc.setFont(new Font(15));
+        gc.fillText("PLAYER HP: " + playerShip.getHealth() + "/100", playerHealthX + 50, playerHealthY + 12);
 
         // If the boss is active, draw its health bar
         if (gameEntityManager.getBoss() != null) {
@@ -281,7 +298,13 @@ public class AsteroidGame extends Application {
         gameState.reset();
         playerShip.reset(400, 300, 5);
         playerShip.resetHealth();
+
+        // Reset boss state
         gameEntityManager.clearAll();
+        gameEntityManager.setBossActive(false); // Make sure the boss is not active
+        bossDefeated = false; // Reset the defeated state for the boss
+
         logger.info("Game restarted.");
     }
+
 }

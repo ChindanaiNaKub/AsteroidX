@@ -60,7 +60,6 @@ public class Boss extends Character {
         }
     }
 
-
     private void updateSprite() {
         long currentTime = System.currentTimeMillis();
         if (currentTime - lastSpriteChange > SPRITE_CHANGE_INTERVAL) {
@@ -80,12 +79,12 @@ public class Boss extends Character {
     public void attack(SpriteLoader spriteLoader) {
         if (Math.random() < 0.02) {  // Randomly fire a bullet
             double bulletSpeed = 3;
-            bossBullets.add(new Bullet(x, y + size / 2, Math.PI / 2, spriteLoader));
+            // Create a bullet using the "laserGreen01.png" sprite
+            bossBullets.add(new Bullet(x, y + size / 2, Math.PI / 2, spriteLoader, "laserGreen01.png",20));
         }
     }
 
     public void draw(GraphicsContext gc) {
-
         if (!isVisible) {
             logger.warning("Boss is not visible!");
             return;
