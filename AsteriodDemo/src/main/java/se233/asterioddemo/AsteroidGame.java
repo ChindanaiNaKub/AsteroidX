@@ -193,6 +193,8 @@ public class AsteroidGame extends Application {
                 gameEntityManager.updateAndDrawBullets(gc, canvas.getWidth(), canvas.getHeight());
             }
 
+            gameEntityManager.updateAndDrawExplosions(gc);
+
             drawUI(gc, spriteLoader, gameState);
             checkCollisions();
 

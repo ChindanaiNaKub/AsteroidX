@@ -12,6 +12,7 @@ import static se233.asterioddemo.AsteroidGame.logger;
 
 public class GameEntityManager {
     private List<Asteroid> asteroids;
+    private List<ExplosionEffect> explosions;
     private List<Bullet> bullets;
     private List<EnemyShip> enemyShips;
     private List<Bullet> enemyBullets;
@@ -35,6 +36,7 @@ public class GameEntityManager {
 
     public GameEntityManager(SpriteLoader spriteLoader) {
         this.asteroids = new ArrayList<>();
+        this.explosions = new ArrayList<>();
         this.bullets = new ArrayList<>();
         this.enemyShips = new ArrayList<>();
         this.enemyBullets = new ArrayList<>();
@@ -42,6 +44,21 @@ public class GameEntityManager {
         this.bossActive = false;
         this.spriteLoader = spriteLoader;
     }
+
+    public void updateAndDrawExplosions(GraphicsContext gc) {
+        Iterator<ExplosionEffect> explosionIter = explosions.iterator();
+        while (explosionIter.hasNext()) {
+            ExplosionEffect explosion = explosionIter.next();
+            explosion.update();
+            explosion.draw(gc);
+
+            // Remove the explosion if it is no longer active
+            if (!explosion.isActive()) {
+                explosionIter.remove();
+            }
+        }
+    }
+
 
     public void startBossStage(AudioClip bossMusic) {
         if (!bossActive) {
@@ -320,9 +337,13 @@ public class GameEntityManager {
                     gameState.addScore(asteroid.getPoints());
                     logger.info("Asteroid destroyed! Score: " + gameState.getScore());
 
+                    // Create an explosion at the asteroid's position when it's destroyed
+                    ExplosionEffect explosion = new ExplosionEffect(asteroid.getSize());
+                    explosion.createExplosion(asteroid.getX(), asteroid.getY(), asteroid.getSize());
+                    explosions.add(explosion);  // Store the explosion effect
+
                     List<Asteroid> newAsteroids = asteroid.split();
                     asteroids.addAll(newAsteroids);
-
                     bulletsToRemove.add(bullet);
                     asteroidsToRemove.add(asteroid);
                     break;
