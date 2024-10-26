@@ -7,6 +7,7 @@ import javafx.scene.input.MouseEvent;
 public class InputController {
     private boolean left, right, up, down, shooting;
     private boolean cheatMode;
+    private boolean shurikenMode, pluseMode, defaultMode;
     private double mouseX, mouseY;
 
     public InputController(Scene scene) {
@@ -19,8 +20,24 @@ public class InputController {
             if (event.getCode() == KeyCode.D) right = true;
             if (event.getCode() == KeyCode.W) up = true;
             if (event.getCode() == KeyCode.S) down = true;
+
             // Activate cheat mode when 'C' is pressed
             if (event.getCode() == KeyCode.C) cheatMode = true;
+
+            // Bullet mode switching
+            if (event.getCode() == KeyCode.Z) {
+                shurikenMode = true;
+                pluseMode = false;
+                defaultMode = false;
+            } else if (event.getCode() == KeyCode.X) {
+                pluseMode = true;
+                shurikenMode = false;
+                defaultMode = false;
+            } else if (event.getCode() == KeyCode.F) {
+                defaultMode = true;
+                shurikenMode = false;
+                pluseMode = false;
+            }
         });
 
         scene.setOnKeyReleased(event -> {
@@ -32,6 +49,7 @@ public class InputController {
             if (event.getCode() == KeyCode.D) right = false;
             if (event.getCode() == KeyCode.W) up = false;
             if (event.getCode() == KeyCode.S) down = false;
+
             // Deactivate cheat mode when 'C' is released
             if (event.getCode() == KeyCode.C) cheatMode = false;
         });
@@ -70,7 +88,19 @@ public class InputController {
         return cheatMode;
     }
 
-    //get position of mouse movement
+    public boolean isShurikenMode() {
+        return shurikenMode;
+    }
+
+    public boolean isPluseMode() {
+        return pluseMode;
+    }
+
+    public boolean isDefaultMode() {
+        return defaultMode;
+    }
+
+    // Get position of mouse movement
     public double getMouseX() {
         return mouseX;
     }

@@ -125,7 +125,7 @@ public class AsteroidGame extends Application {
             }
 
             if (inputController.isShootingPressed()) {
-                fireBullet();
+                fireBullet(inputController);  // Pass InputController to fireBullet to determine bullet mode
             }
         } else {
             drawGameOver();
@@ -153,8 +153,8 @@ public class AsteroidGame extends Application {
     }
 
 
-    private void fireBullet() {
-        Bullet bullet = playerShip.fireBullet();
+    private void fireBullet(InputController inputController) {
+        Bullet bullet = playerShip.fireBullet(inputController);  // Pass InputController to determine bullet mode
         if (bullet != null) {
             gameEntityManager.addBullet(bullet);
             laserSound.play();
@@ -207,8 +207,13 @@ public class AsteroidGame extends Application {
         // Draw score in the top right corner
         double screenWidth = gc.getCanvas().getWidth();
         drawNumber(gc, gameState.getScore(), screenWidth - 100, 20, spriteLoader);
-    }
 
+        // Draw bullet mode in the specified position (bottom center)
+        String bulletMode = playerShip.getBulletMode(); // Get the current bullet mode
+        gc.setFill(Color.WHITE); // Set color to red for better visibility
+        gc.setFont(new Font(15)); // Set font size
+        gc.fillText("Bullet Mode: " + bulletMode, screenWidth / 2 - 60, canvas.getHeight() - 30); // Adjust position as needed
+    }
     private void triggerGameOver() {
         gameOver = true;
         explodeSound.play();
