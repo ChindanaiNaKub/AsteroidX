@@ -2,9 +2,14 @@ package se233.asterioddemo;
 
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
+import se233.asterioddemo.exception.DrawingException;
+import se233.asterioddemo.exception.SpriteNotFoundException;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Asteroid extends Character {
     private int points;
@@ -38,6 +43,7 @@ public class Asteroid extends Character {
 
     private static final Random random = new Random();
     private final SpriteLoader spriteLoader;
+    private static final Logger logger = Logger.getLogger(Asteroid.class.getName());
 
     public Asteroid(double x, double y, double speed, double size, int points,
                     boolean isSplit, SpriteLoader spriteLoader) {
@@ -49,19 +55,30 @@ public class Asteroid extends Character {
 
         // Random rotation speed between -2 and 2 degrees per frame
         this.rotationSpeed = (random.nextDouble() * 4 - 2);
-        this.rotationAngle = random.nextDouble() * 360; // Random initial rotation
+        this.rotationAngle = random.nextDouble() * 360;
 
-        // Select random asteroid sprite
-        String spriteKey = ASTEROID_SPRITES[random.nextInt(isSplit ?
-                ASTEROID_SPRITES.length : 4)]; // Use smaller sprites for split asteroids
-        this.asteroidImage = spriteLoader.getSprite(spriteKey);
+        // Load the sprite with error handling
+        try {
+            String spriteKey = ASTEROID_SPRITES[random.nextInt(isSplit ?
+                    ASTEROID_SPRITES.length : 4)]; // Use smaller sprites for split asteroids
+            this.asteroidImage = spriteLoader.getSprite(spriteKey);
+
+            if (this.asteroidImage == null) {
+                throw new SpriteNotFoundException("Sprite not found for key: " + spriteKey);
+            }
+        } catch (SpriteNotFoundException e) {
+            logger.log(Level.SEVERE, "Failed to load asteroid sprite: " + e.getMessage());
+            this.asteroidImage = null; // Assign a fallback or null to avoid crashes
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Unexpected error while loading asteroid sprite: ", e);
+        }
     }
 
     @Override
     public void move() {
         x += Math.cos(direction) * speed;
         y += Math.sin(direction) * speed;
-        rotationAngle += rotationSpeed; // Update rotation
+        rotationAngle += rotationSpeed;
     }
 
     public boolean isOffScreen(double screenWidth, double screenHeight) {
@@ -87,53 +104,59 @@ public class Asteroid extends Character {
 
     @Override
     public void draw(GraphicsContext gc) {
-        if (asteroidImage != null) {
-            gc.save();
+        try {
+            if (asteroidImage != null) {
+                gc.save();
 
-            // Move to asteroid position
-            gc.translate(x, y);
+                gc.translate(x, y);
+                gc.rotate(rotationAngle);
 
-            // Rotate
-            gc.rotate(rotationAngle);
+                double scaleFactor = this.getSize() /
+                        Math.max(asteroidImage.getWidth(), asteroidImage.getHeight());
+                gc.scale(scaleFactor, scaleFactor);
 
-            // Calculate scale factor based on desired size
-            double scaleFactor = this.getSize() /
-                    Math.max(asteroidImage.getWidth(), asteroidImage.getHeight());
-            gc.scale(scaleFactor, scaleFactor);
+                gc.drawImage(
+                        asteroidImage,
+                        -asteroidImage.getWidth() / 2,
+                        -asteroidImage.getHeight() / 2,
+                        asteroidImage.getWidth(),
+                        asteroidImage.getHeight()
+                );
 
-            // Draw the asteroid image centered
-            gc.drawImage(
-                    asteroidImage,
-                    -asteroidImage.getWidth() / 2,
-                    -asteroidImage.getHeight() / 2,
-                    asteroidImage.getWidth(),
-                    asteroidImage.getHeight()
-            );
-
-            gc.restore();
+                gc.restore();
+            } else {
+                throw new DrawingException("Asteroid image is null, cannot draw.");
+            }
+        } catch (DrawingException e) {
+            logger.log(Level.WARNING, e.getMessage());
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Unexpected error while drawing asteroid: ", e);
         }
     }
 
     public List<Asteroid> split() {
         List<Asteroid> smallerAsteroids = new ArrayList<>();
-        if (size > 20) {  // Minimum size threshold for splitting
-            double newSize = size / 1.5; // Less dramatic size reduction
-            int newPoints = points / 2;
+        try {
+            if (size > 20) {
+                double newSize = size / 1.5;
+                int newPoints = points / 2;
 
-            // Create two smaller asteroids with slightly different directions
-            double splitAngle1 = direction + Math.PI/4; // 45 degrees one way
-            double splitAngle2 = direction - Math.PI/4; // 45 degrees other way
+                double splitAngle1 = direction + Math.PI / 4;
+                double splitAngle2 = direction - Math.PI / 4;
 
-            Asteroid asteroid1 = new Asteroid(x, y, speed * 1.2, newSize,
-                    newPoints, true, spriteLoader);
-            asteroid1.direction = splitAngle1;
+                Asteroid asteroid1 = new Asteroid(x, y, speed * 1.2, newSize,
+                        newPoints, true, spriteLoader);
+                asteroid1.direction = splitAngle1;
 
-            Asteroid asteroid2 = new Asteroid(x, y, speed * 1.2, newSize,
-                    newPoints, true, spriteLoader);
-            asteroid2.direction = splitAngle2;
+                Asteroid asteroid2 = new Asteroid(x, y, speed * 1.2, newSize,
+                        newPoints, true, spriteLoader);
+                asteroid2.direction = splitAngle2;
 
-            smallerAsteroids.add(asteroid1);
-            smallerAsteroids.add(asteroid2);
+                smallerAsteroids.add(asteroid1);
+                smallerAsteroids.add(asteroid2);
+            }
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error during asteroid split: ", e);
         }
         return smallerAsteroids;
     }
