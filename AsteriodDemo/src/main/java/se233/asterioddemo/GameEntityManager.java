@@ -344,6 +344,10 @@ public class GameEntityManager {
                 asteroidIter.remove();
                 hitSound.play();
 
+                // Automatically activate shield when a life is lost
+                playerShip.reset(playerShip.getX(), playerShip.getY(), playerShip.getSpeed());
+                playerShip.activateShield();
+
                 if (playerShip.getHealth() <= 0) {
                     gameState.setGameOver(true);
                     logger.warning("Player killed by Asteroid. Game Over!");

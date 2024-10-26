@@ -22,6 +22,13 @@ public class PlayerShip extends Character {
     private SpriteLoader spriteLoader;
     private String bulletMode = "default";
     private static List<Bullet> bullets = new ArrayList<>();
+    private boolean isShieldActive = false;
+    private double shieldAlpha = 0.0;
+    private boolean isHit = false;
+    private long hitAnimationStart = 0;
+    private final long HIT_ANIMATION_DURATION = 500; // milliseconds
+    private long shieldActivationTime = 0;
+    private final long SHIELD_DURATION = 3000; // Shield lasts for 3 seconds
 
     public PlayerShip(double x, double y, double speed, double size, SpriteLoader spriteLoader) {
         super(x, y, speed, size);
@@ -35,53 +42,108 @@ public class PlayerShip extends Character {
     @Override
     public void draw(GraphicsContext gc) {
         gc.save();
-
-        // Center point translation
         gc.translate(x, y);
-
-        // Convert angle to degrees and rotate
         gc.rotate(Math.toDegrees(angle));
 
+        // Hit animation effect
+        if (isHit) {
+            long currentTime = System.currentTimeMillis();
+            if (currentTime - hitAnimationStart < HIT_ANIMATION_DURATION) {
+                if ((currentTime / 100) % 2 == 0) {
+                    gc.setGlobalAlpha(0.5);
+                }
+            } else {
+                isHit = false;
+            }
+        }
+
+        // Draw ship
         double imageWidth = shipImage.getWidth();
         double imageHeight = shipImage.getHeight();
+        gc.drawImage(shipImage, -imageWidth/2, -imageHeight/2, imageWidth, imageHeight);
 
-        // Calculate scale factor based on desired size
-        double scaleFactor = 1.0;  // Use max dimension for consistent scaling
+        // Draw shield if active
+        if (isShieldActive) {
+            drawShield(gc, imageWidth * 1.2);
+        }
 
-        // Apply scale
-        gc.scale(scaleFactor, scaleFactor);
-
-        // Draw the ship image centered
-        gc.drawImage(
-                shipImage,
-                -imageWidth / 2,  // Center horizontally
-                -imageHeight / 2, // Center vertically
-                imageWidth,
-                imageHeight
-        );
-
+        // Draw thrust effect (existing code)
         if (isThrusting) {
-            double flameSize = imageHeight * 0.2;
-            for (int i = 0; i < 3; i++) {
-                drawFlame(gc, flameSize, 0.7 - (i * 0.2));
-            }
-            gc.setGlobalAlpha(1.0);
+            drawThrustEffect(gc);
         }
 
         gc.restore();
     }
 
-    private void drawFlame(GraphicsContext gc, double size, double opacity) {
-        gc.setGlobalAlpha(opacity);
-        gc.setFill(getFlameColor());
+    private void drawShield(GraphicsContext gc, double size) {
+        gc.setStroke(Color.rgb(100, 200, 255, shieldAlpha));
+        gc.setLineWidth(3);
+        gc.strokeOval(-size/2, -size/2, size, size);
 
-        double flickerX = (Math.random() - 0.5) * size * 0.2;
-        double flickerY = (Math.random() - 0.5) * size * 0.2;
+        // Add shield wave effect
+        double waveSize = size * (1 + Math.sin(System.currentTimeMillis() * 0.005) * 0.05);
+        gc.setStroke(Color.rgb(100, 200, 255, shieldAlpha * 0.5));
+        gc.strokeOval(-waveSize/2, -waveSize/2, waveSize, waveSize);
+    }
 
-        double[] xPoints = {0, -size * 0.5 + flickerX, size * 0.5 + flickerX};
-        double[] yPoints = {0, size + flickerY, size + flickerY};
+    public void activateShield() {
+        isShieldActive = true;
+        shieldAlpha = Math.min(shieldAlpha + 0.1, 0.7);
+        shieldActivationTime = System.currentTimeMillis();
+    }
 
-        gc.fillPolygon(xPoints, yPoints, 3);
+    public void updateShield() {
+        long currentTime = System.currentTimeMillis();
+        if (isShieldActive && currentTime - shieldActivationTime >= SHIELD_DURATION) {
+            deactivateShield();
+        }
+    }
+
+    public void deactivateShield() {
+        isShieldActive = false;
+        shieldAlpha = Math.max(shieldAlpha - 0.1, 0);
+    }
+
+    private void drawThrustEffect(GraphicsContext gc) {
+        double baseSize = shipImage.getHeight() * 0.2;
+        double time = System.currentTimeMillis() * 0.001;
+
+        // Main thrust
+        for (int i = 0; i < 3; i++) {
+            double flickerSize = baseSize * (1 + Math.sin(time * 10 + i) * 0.2);
+            double opacity = 0.7 - (i * 0.2);
+
+            gc.setGlobalAlpha(opacity);
+            gc.setFill(getFlameColor());
+
+            double flickerX = Math.sin(time * 20 + i) * baseSize * 0.1;
+            double[] xPoints = {
+                    flickerX,
+                    -flickerSize + flickerX,
+                    flickerSize + flickerX
+            };
+            double[] yPoints = {
+                    0,
+                    flickerSize * 1.5,
+                    flickerSize * 1.5
+            };
+
+            gc.fillPolygon(xPoints, yPoints, 3);
+        }
+
+        // Add particle effects
+        for (int i = 0; i < 2; i++) {
+            double particleSize = baseSize * 0.3;
+            double particleX = (Math.random() - 0.5) * baseSize;
+            double particleY = baseSize * 1.2 + Math.random() * baseSize * 0.5;
+
+            gc.setGlobalAlpha(0.3);
+            gc.setFill(Color.WHITE);
+            gc.fillOval(particleX - particleSize/2, particleY - particleSize/2,
+                    particleSize, particleSize);
+        }
+
+        gc.setGlobalAlpha(1.0);
     }
 
     private Color getFlameColor() {
@@ -135,8 +197,6 @@ public class PlayerShip extends Character {
         return null;
     }
 
-
-
     public void reduceHealth(int amount) {
         this.health -= amount;
         if (this.health < 0) this.health = 0;
@@ -150,6 +210,7 @@ public class PlayerShip extends Character {
         this.velocityX = 0;
         this.velocityY = 0;
         this.isThrusting = false;
+        activateShield(); // Activate the shield when the ship resets.
     }
 
     public void handleScreenEdges(double screenWidth, double screenHeight) {
@@ -258,5 +319,9 @@ public class PlayerShip extends Character {
 
     public static List<Bullet> getBullets() {
         return bullets;
+    }
+
+    public double getSpeed() {
+        return speed;
     }
 }
