@@ -130,7 +130,7 @@ public class GameEntityManager {
         double x = random.nextInt(800);  // Screen width assumption
         double y = random.nextInt(600);  // Screen height assumption
         double speed = 1.0 + random.nextDouble() * 2.0;
-        double size = 30;  // Define the enemy size
+        double size = 75;  // Define the enemy size
         double angle = Math.PI / 2;  // Define or randomize the angle
 
         enemyShips.add(new EnemyShip(x, y, speed, size, angle, spriteLoader));
