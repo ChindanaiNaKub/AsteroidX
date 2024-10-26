@@ -9,7 +9,7 @@ public class PlayerShip extends Character {
     private double angle;
     private double velocityX = 0;
     private double velocityY = 0;
-    private final double MAX_SPEED = 5.0;
+    final double MAX_SPEED = 5.0;
     private final double THRUST = 0.05;  // Power of thrust
     private final double DECELERATION = 0.98;  // Friction to slow down over time
     private boolean isThrusting = false;  // Track if the ship is thrusting

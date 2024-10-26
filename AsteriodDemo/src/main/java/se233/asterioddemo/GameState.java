@@ -18,7 +18,11 @@ public class GameState {
     }
 
     public void addScore(int points) {
-        this.score += points;
+        if (score <= Integer.MAX_VALUE - points) {
+            score += points;
+        } else {
+            score = Integer.MAX_VALUE;
+        }
     }
 
     public int getLives() {
