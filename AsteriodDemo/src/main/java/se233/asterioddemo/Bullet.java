@@ -3,14 +3,20 @@ package se233.asterioddemo;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Bullet {
     private double x, y;
     private double angle;
     private double speed = 3;
     private Image bulletImage;
-    private final double size = 10.0;
+    private double size = 10.0;
     private SpriteLoader spriteLoader;
     private int damage; // Add damage field
+    private List<BulletTrail> trails;
+    private String bulletMode;
+    private double rotation; // Add this field to store the bullet's rotation
 
     // Define bullet sprite names from your sprite sheet
     private static final String[] BULLET_SPRITES = {
@@ -29,13 +35,16 @@ public class Bullet {
     };
 
     // Overloaded constructor to specify a particular bullet sprite
-    public Bullet(double startX, double startY, double angle, SpriteLoader spriteLoader, String spriteName,int damage) {
-        this.x = startX;
+    public Bullet(double startX, double startY, double angle, SpriteLoader spriteLoader, String spriteName, int damage) {        this.x = startX;
         this.y = startY;
         this.angle = angle;
+        this.rotation = angle + Math.PI/2; // Add 90 degrees to align with ship's direction
         this.spriteLoader = spriteLoader;
         this.bulletImage = spriteLoader.getSprite(spriteName);  // Use specified sprite
         this.damage = damage;
+        this.trails = new ArrayList<>();
+        this.bulletMode = spriteName.contains("Blue11") ? "shuriken" :
+                spriteName.contains("Blue08") ? "pulse" : "default";
     }
 
     public int getDamage() {
@@ -50,7 +59,21 @@ public class Bullet {
 
     // Main update method that handles movement and screen wrapping
     public void update(double screenWidth, double screenHeight) {
+        // Add trail effect
+        trails.add(new BulletTrail(x, y, size * 0.5));
+
+        // Update existing trails
+        trails.removeIf(trail -> !trail.update());
+
         move();
+
+        // Special effects based on bullet mode
+        if (bulletMode.equals("shuriken")) {
+            angle += 0.2; // Rotate shuriken bullet
+        } else if (bulletMode.equals("pulse")) {
+            // Pulse effect - vary the size
+            size = 10.0 + Math.sin(System.currentTimeMillis() * 0.01) * 2;
+        }
 
         // Wrap around screen edges
         if (x < 0) x = screenWidth;
@@ -60,7 +83,26 @@ public class Bullet {
     }
 
     public void draw(GraphicsContext gc) {
-        gc.drawImage(bulletImage, x - bulletImage.getWidth() / 2, y - bulletImage.getHeight() / 2);
+        // Draw trails first
+        for (BulletTrail trail : trails) {
+            trail.draw(gc);
+        }
+
+        gc.save();
+        gc.translate(x, y);
+
+        // Rotate based on the bullet's direction
+        // Convert angle to degrees and add 90 to account for vertical sprite
+        gc.rotate(Math.toDegrees(rotation));
+
+        if (bulletMode.equals("shuriken")) {
+            gc.rotate(Math.toDegrees(angle));
+        }
+
+        gc.drawImage(bulletImage,
+                -bulletImage.getWidth() / 2,
+                -bulletImage.getHeight() / 2);
+        gc.restore();
     }
 
     public double getX() { return x; }
