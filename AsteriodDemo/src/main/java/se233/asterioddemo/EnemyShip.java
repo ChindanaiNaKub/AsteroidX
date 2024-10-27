@@ -8,7 +8,7 @@ import java.util.Random;
 public class EnemyShip extends Character {
     private double shootInterval = 2000; // Milliseconds between shots
     private double angle;  // Angle to move and shoot
-    private int health = 50;  // Enemy health
+    private int health = 30;  // Enemy health
     private long lastShootTime = 0;
     private double changeDirectionTimer = 0;  // Timer to change direction periodically
     private Random random = new Random();

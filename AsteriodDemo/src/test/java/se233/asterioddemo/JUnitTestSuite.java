@@ -10,7 +10,11 @@ import org.junit.platform.suite.api.Suite;
         EnemyShipTest.class,
         GameEntityManagerTest.class,
         GameStateTest.class,
-        PlayerShipTest.class
+        PlayerShipTest.class,
+        CharacterActionsTest.class,
+        CharacterMovementTest.class,
+        GameScoringTest.class
+
 })
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class JUnitTestSuite {
