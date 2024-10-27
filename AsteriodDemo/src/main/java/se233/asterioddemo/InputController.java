@@ -8,6 +8,7 @@ public class InputController {
     private boolean left, right, up, down, shooting;
     private boolean cheatMode;
     private boolean shurikenMode, pluseMode, defaultMode;
+    private boolean summonDrone; // New variable to track drone summoning
     private double mouseX, mouseY;
 
     public InputController(Scene scene) {
@@ -38,6 +39,11 @@ public class InputController {
                 shurikenMode = false;
                 pluseMode = false;
             }
+
+            // Summon a drone when 'Q' is pressed
+            if (event.getCode() == KeyCode.Q) {
+                summonDrone = true;
+            }
         });
 
         scene.setOnKeyReleased(event -> {
@@ -52,6 +58,11 @@ public class InputController {
 
             // Deactivate cheat mode when 'C' is released
             if (event.getCode() == KeyCode.C) cheatMode = false;
+
+            // Reset drone summon state when 'Q' is released
+            if (event.getCode() == KeyCode.Q) {
+                summonDrone = false;
+            }
         });
 
         scene.setOnMousePressed(event -> shooting = true);
@@ -64,6 +75,7 @@ public class InputController {
         mouseY = event.getY();
     }
 
+    // Getter methods for movement, actions, and state
     public boolean isLeftPressed() {
         return left;
     }
@@ -98,6 +110,11 @@ public class InputController {
 
     public boolean isDefaultMode() {
         return defaultMode;
+    }
+
+    // Check if the 'Q' key was pressed to summon a drone
+    public boolean isSummonDrone() {
+        return summonDrone;
     }
 
     // Get position of mouse movement

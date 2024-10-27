@@ -47,6 +47,11 @@ public class AsteroidGame extends Application {
     private Scene menuScene, gameScene;
     private AnimationTimer gameLoop;
 
+    private Drone drone; // To track the drone
+    private boolean canSummonDrone = true; // Track if the drone can be summoned
+    private long lastDroneTime = 0;
+    private final long DRONE_COOLDOWN = 10000; // Cooldown time in milliseconds (10 seconds)
+
     private static final String[] NUMBER_SPRITES = {
             "numeral0.png", "numeral1.png", "numeral2.png",
             "numeral3.png", "numeral4.png", "numeral5.png",
@@ -162,16 +167,22 @@ public class AsteroidGame extends Application {
         gameEntityManager.clearAll();
         gameEntityManager.setBossActive(false);
 
+        canSummonDrone = true; // Allow the player to summon the drone
+        lastDroneTime = 0; // Reset the last drone time
+        drone = null; // Ensure no drone is active at the start
+
         primaryStage.setScene(gameScene);
         gameLoop.start();
         logger.info("Game started.");
     }
+
 
     private void updateGame() {
         clearScreen();
 
         if (!gameOver) {
             updatePlayerShip();
+            handleDroneSummon(); // Add this line to handle drone behavior
 
             if (!gameEntityManager.isBossActive()) {
                 // Normal stage behavior
@@ -249,12 +260,19 @@ public class AsteroidGame extends Application {
     }
 
     private void fireBullet(InputController inputController) {
+        // Player's bullet
         Bullet bullet = playerShip.fireBullet(inputController);
         if (bullet != null) {
             gameEntityManager.addBullet(bullet);
             laserSound.play();
         }
+
+        // If the drone is active, make it fire as well
+        if (drone != null && drone.isActive()) {
+            drone.handleShooting(true); // Trigger drone shooting when the player shoots
+        }
     }
+
 
     private void checkCollisions() {
         gameEntityManager.checkCollisions(gameState, playerShip, hitSound, explodeSound, logger);
@@ -304,6 +322,27 @@ public class AsteroidGame extends Application {
 
         String bulletMode = playerShip.getBulletMode();
         gc.fillText("Bullet Mode: " + bulletMode, screenWidth / 2 - 60, canvas.getHeight() - 30);
+
+        // Display drone status
+        String droneStatusText;
+        Color droneStatusColor;
+        if (drone != null && drone.isActive()) {
+            droneStatusText = "Drone: Active";
+            droneStatusColor = Color.GREEN;
+        } else {
+            long currentTime = System.currentTimeMillis();
+            long cooldownRemaining = (lastDroneTime + DRONE_COOLDOWN - currentTime) / 1000; // Convert to seconds
+            if (cooldownRemaining > 0) {
+                droneStatusText = "Drone: Cooldown " + cooldownRemaining + "s";
+                droneStatusColor = Color.RED;
+            } else {
+                droneStatusText = "Drone: Ready";
+                droneStatusColor = Color.GREEN;
+            }
+        }
+
+        gc.setFill(droneStatusColor);
+        gc.fillText(droneStatusText, screenWidth / 2 - 60, canvas.getHeight() - 10); // Display below bullet mode
 
         double playerHealthWidth = 200;
         double playerHealthHeight = 15;
@@ -396,7 +435,37 @@ public class AsteroidGame extends Application {
         bossDefeated = false;
 
         bossStageMusic.stop();
+        canSummonDrone = true; // Allow the player to summon the drone again after restart
+        lastDroneTime = 0; // Reset the last drone time for cooldown
+        drone = null; // Clear any existing drone
+
         gameLoop.start();
         logger.info("Game restarted.");
+    }
+
+    private void handleDroneSummon() {
+        long currentTime = System.currentTimeMillis();
+
+        // Check if the player is pressing "Q" to summon a drone and if it's available
+        if (inputController.isSummonDrone() && canSummonDrone) {
+            drone = new Drone(playerShip, spriteLoader, gameEntityManager); // Pass gameEntityManager here
+            drone.activate();
+            canSummonDrone = false;
+            lastDroneTime = currentTime;
+            logger.info("Drone summoned!");
+        }
+
+        // Update the drone if it's active, passing the player's shooting state
+        if (drone != null && drone.isActive()) {
+            boolean playerShooting = inputController.isShootingPressed();
+            drone.update(playerShooting);
+            drone.draw(gc);
+        }
+
+        // Check if the cooldown has expired for summoning a new drone
+        if (!canSummonDrone && currentTime - lastDroneTime >= DRONE_COOLDOWN) {
+            canSummonDrone = true;
+            logger.info("Drone is ready to be summoned again.");
+        }
     }
 }
