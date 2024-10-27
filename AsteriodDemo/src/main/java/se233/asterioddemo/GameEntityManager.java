@@ -497,4 +497,12 @@ public class GameEntityManager {
             this.boss = null; // Ensure that the boss object is set to null when deactivating
         }
     }
+
+    public List<Asteroid> getAsteroids() {
+        return asteroids;
+    }
+
+    public List<EnemyShip> getEnemyShips() {
+        return enemyShips;
+    }
 }

@@ -7,6 +7,7 @@ import javafx.scene.input.MouseEvent;
 public class InputController {
     private boolean left, right, up, down, shooting;
     private boolean cheatMode;
+    private boolean AIMode;
     private boolean shurikenMode, pluseMode, defaultMode;
     private boolean summonDrone; // New variable to track drone summoning
     private double mouseX, mouseY;
@@ -24,6 +25,8 @@ public class InputController {
 
             // Activate cheat mode when 'C' is pressed
             if (event.getCode() == KeyCode.C) cheatMode = true;
+
+            if (event.getCode() == KeyCode.F1) AIMode = true;
 
             // Bullet mode switching
             if (event.getCode() == KeyCode.Z) {
@@ -58,6 +61,8 @@ public class InputController {
 
             // Deactivate cheat mode when 'C' is released
             if (event.getCode() == KeyCode.C) cheatMode = false;
+
+            if (event.getCode() == KeyCode.F1) AIMode = false;
 
             // Reset drone summon state when 'Q' is released
             if (event.getCode() == KeyCode.Q) {
@@ -98,6 +103,10 @@ public class InputController {
 
     public boolean isCheatModeEnabled() {
         return cheatMode;
+    }
+
+    public boolean isShipAIMode(){
+        return AIMode;
     }
 
     public boolean isShurikenMode() {
