@@ -30,33 +30,38 @@ public class AsteroidGame extends Application {
 
     private PlayerShip playerShip;
     private boolean gameOver;
-    private boolean bossDefeated; // Flag to control boss reappearance
+    private boolean bossDefeated;
     private AudioClip laserSound;
     private AudioClip hitSound;
     private AudioClip explodeSound;
     private AudioClip thrustSound;
     private AudioClip bossMusic;
+    private AudioClip bossStageMusic;
 
     static final Logger logger = Logger.getLogger(AsteroidGame.class.getName());
 
     private Image backgroundImage;
+    private Image backgroundImageBoss;
 
     private SpriteLoader spriteLoader;
     private Scene menuScene, gameScene;
     private AnimationTimer gameLoop;
 
-    // Define number sprites
+    private Drone drone; // To track the drone
+    private boolean canSummonDrone = true; // Track if the drone can be summoned
+    private long lastDroneTime = 0;
+    private final long DRONE_COOLDOWN = 10000; // Cooldown time in milliseconds (10 seconds)
+
     private static final String[] NUMBER_SPRITES = {
             "numeral0.png", "numeral1.png", "numeral2.png",
             "numeral3.png", "numeral4.png", "numeral5.png",
             "numeral6.png", "numeral7.png", "numeral8.png", "numeral9.png"
     };
 
-    private static final int BOSS_TRIGGER_SCORE = 17; // Score needed to trigger boss
+    private static final int BOSS_TRIGGER_SCORE = 17;
 
     @Override
     public void start(Stage primaryStage) {
-        // Initialize logging
         try (InputStream configFile = AsteroidGame.class.getClassLoader().getResourceAsStream("logging.properties")) {
             LogManager.getLogManager().readConfiguration(configFile);
         } catch (Exception e) {
@@ -64,8 +69,9 @@ public class AsteroidGame extends Application {
         }
 
         spriteLoader = new SpriteLoader("/sprite/sheet.png", "/sprite/sheet.xml");
+        backgroundImage = new Image(getClass().getResource("/sprite/background.png").toExternalForm());
+        backgroundImageBoss = new Image(getClass().getResource("/sprite/background_1.png").toExternalForm());
 
-        // Set up main menu
         Pane menuLayout = createMainMenu(primaryStage);
         menuScene = new Scene(menuLayout, 800, 600);
 
@@ -73,7 +79,6 @@ public class AsteroidGame extends Application {
         primaryStage.setScene(menuScene);
         primaryStage.show();
 
-        // Prepare game scene but do not set it yet
         setupGameScene(primaryStage);
     }
 
@@ -81,33 +86,29 @@ public class AsteroidGame extends Application {
         VBox menuLayout = new VBox(30);
         menuLayout.setStyle("-fx-alignment: center;");
 
-        // Use the background image with adjusted size for 1680x900
         Image menuBackgroundImage = new Image(getClass().getResource("/sprite/background.png").toExternalForm());
         BackgroundImage backgroundImage = new BackgroundImage(
                 menuBackgroundImage,
                 BackgroundRepeat.NO_REPEAT,
                 BackgroundRepeat.NO_REPEAT,
                 BackgroundPosition.CENTER,
-                new BackgroundSize(1680, 900, false, false, false, false) // Adjusted size for the menu
+                new BackgroundSize(1680, 900, false, false, false, false)
         );
         menuLayout.setBackground(new Background(backgroundImage));
 
-        // Create buttons with larger size and style
         Button startButton = createStyledButton("Start", primaryStage);
-        Button selectAlbumButton = createStyledButton("Select Album", primaryStage);
         Button exitButton = createStyledButton("Exit", primaryStage);
 
         startButton.setOnAction(e -> startGame(primaryStage));
-        selectAlbumButton.setOnAction(e -> selectAlbum());
         exitButton.setOnAction(e -> primaryStage.close());
 
-        menuLayout.getChildren().addAll(startButton, selectAlbumButton, exitButton);
+        menuLayout.getChildren().addAll(startButton, exitButton);
         return menuLayout;
     }
 
     private Button createStyledButton(String text, Stage primaryStage) {
         Button button = new Button(text);
-        button.setPrefSize(300, 60); // Increase button size for better balance
+        button.setPrefSize(300, 60);
         button.setStyle("-fx-font-size: 20px; -fx-text-fill: #FFFFFF; -fx-background-color: #333333;");
         button.setOnMouseEntered(e -> button.setStyle("-fx-font-size: 20px; -fx-text-fill: #FFFFFF; -fx-background-color: #555555;"));
         button.setOnMouseExited(e -> button.setStyle("-fx-font-size: 20px; -fx-text-fill: #FFFFFF; -fx-background-color: #333333;"));
@@ -116,28 +117,26 @@ public class AsteroidGame extends Application {
 
     private void setupGameScene(Stage primaryStage) {
         Pane gameRoot = new Pane();
-        canvas = new Canvas(1280, 720); // Updated to 1680x900 for 720p resolution
+        canvas = new Canvas(1280, 720);
         gameRoot.getChildren().add(canvas);
-        gameScene = new Scene(gameRoot, 1280, 720); // Updated to match the new resolution
+        gameScene = new Scene(gameRoot, 1280, 720);
 
         gc = canvas.getGraphicsContext2D();
-        backgroundImage = new Image(getClass().getResource("/sprite/background.png").toExternalForm());
-
         gameState = new GameState();
         inputController = new InputController(gameScene);
         gameEntityManager = new GameEntityManager(spriteLoader);
-        playerShip = new PlayerShip(840, 450, 5, 30, spriteLoader); // Centered for the new resolution
+        playerShip = new PlayerShip(640, 360, 5, 30, spriteLoader);
 
-        // Load sounds
         laserSound = new AudioClip(getClass().getResource("/sounds/laser.m4a").toExternalForm());
         hitSound = new AudioClip(getClass().getResource("/sounds/hit.m4a").toExternalForm());
         explodeSound = new AudioClip(getClass().getResource("/sounds/explode.m4a").toExternalForm());
         thrustSound = new AudioClip(getClass().getResource("/sounds/thrust.m4a").toExternalForm());
         bossMusic = new AudioClip(getClass().getResource("/sounds/boss.mp3").toExternalForm());
+        bossStageMusic = new AudioClip(getClass().getResource("/sounds/FEIN.wav").toExternalForm());
 
+        setSoundVolumes();
         startAsteroidAndEnemySpawning();
 
-        // Define the game loop but do not start it yet
         gameLoop = new AnimationTimer() {
             @Override
             public void handle(long now) {
@@ -146,42 +145,47 @@ public class AsteroidGame extends Application {
         };
     }
 
+    private void setSoundVolumes() {
+        laserSound.setVolume(0.1);
+        hitSound.setVolume(0.1);
+        explodeSound.setVolume(0.3);
+        thrustSound.setVolume(0.2);
+        bossMusic.setVolume(0.6);
+        bossStageMusic.setVolume(0.7);
+    }
+
     private void startGame(Stage primaryStage) {
-        // Ensure the game scene is clean
         Pane rootPane = (Pane) gameScene.getRoot();
         rootPane.getChildren().clear();
-        rootPane.getChildren().add(canvas); // Add the canvas back for rendering the game
+        rootPane.getChildren().add(canvas);
 
-        // Properly reset game variables
         gameOver = false;
         bossDefeated = false;
         gameState.reset();
-        playerShip.reset(840, 450, 5); // Center for 1680x900 resolution
+        playerShip.reset(840, 450, 5);
         playerShip.resetHealth();
         gameEntityManager.clearAll();
         gameEntityManager.setBossActive(false);
 
-        // Set the scene to the game and start the game loop
+        canSummonDrone = true; // Allow the player to summon the drone
+        lastDroneTime = 0; // Reset the last drone time
+        drone = null; // Ensure no drone is active at the start
+
         primaryStage.setScene(gameScene);
         gameLoop.start();
         logger.info("Game started.");
     }
 
 
-    private void selectAlbum() {
-        // Handle album selection logic here (e.g., open a file chooser)
-        logger.info("Select Album button clicked.");
-    }
-
-    // Other game methods remain unchanged...
-
     private void updateGame() {
         clearScreen();
 
         if (!gameOver) {
             updatePlayerShip();
+            handleDroneSummon(); // Add this line to handle drone behavior
 
             if (!gameEntityManager.isBossActive()) {
+                // Normal stage behavior
                 gameEntityManager.updateAndDrawBullets(gc, canvas.getWidth(), canvas.getHeight());
                 gameEntityManager.updateAndDrawEnemyShips(gc, playerShip.getX(), playerShip.getY());
                 gameEntityManager.updateAndDrawEnemyBullets(gc, canvas.getWidth(), canvas.getHeight());
@@ -190,12 +194,20 @@ public class AsteroidGame extends Application {
                 checkBossStage();
                 checkCheatMode();
             } else {
+                // Boss stage behavior
                 gameEntityManager.updateAndDrawBoss(gc, playerShip, gameState, hitSound, logger);
                 gameEntityManager.updateAndDrawBullets(gc, canvas.getWidth(), canvas.getHeight());
+
+                // Check if the boss is defeated
+                if (gameEntityManager.getBoss() != null && gameEntityManager.getBoss().getHealth() <= 0) {
+                    gameEntityManager.setBossActive(false);
+                    bossDefeated = true;
+                    bossStageMusic.stop(); // Ensure the music stops immediately
+                    logger.info("Boss defeated, returning to normal stage.");
+                }
             }
 
             gameEntityManager.updateAndDrawExplosions(gc);
-
             drawUI(gc, spriteLoader, gameState);
             checkCollisions();
 
@@ -212,18 +224,19 @@ public class AsteroidGame extends Application {
     }
 
     private void checkBossStage() {
-        // Check if the boss is not active, not already defeated, and the score is a multiple of 17 (17, 34, 51, ...)
         if (!gameEntityManager.isBossActive() && !bossDefeated &&
                 gameState.getScore() >= BOSS_TRIGGER_SCORE &&
                 gameState.getScore() % BOSS_TRIGGER_SCORE == 0) {
             gameEntityManager.startBossStage(bossMusic);
+            bossStageMusic.play(); // Play the boss stage background music when the boss appears
+            logger.info("Boss stage started, playing boss stage music.");
         }
     }
 
     private void checkCheatMode() {
         if (inputController.isCheatModeEnabled() && !gameEntityManager.isBossActive()) {
-            // Activate boss stage instantly when cheat mode is enabled
             gameEntityManager.startBossStage(bossMusic);
+            bossStageMusic.play(); // Play the boss stage background music when cheat mode activates the boss
             logger.info("Cheat mode activated: Boss stage started.");
         }
     }
@@ -231,38 +244,46 @@ public class AsteroidGame extends Application {
     private void startAsteroidAndEnemySpawning() {
         Timer spawnTimer = new Timer(true);
 
-        // Spawn asteroids every 4 seconds
         spawnTimer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                gameEntityManager.continuousSpawnAsteroids(gc);  // Updated to use continuous spawning
+                gameEntityManager.continuousSpawnAsteroids(gc);
             }
         }, 0, 4000);
 
-        // Spawn enemies every 5 seconds
         spawnTimer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                gameEntityManager.continuousSpawnEnemyShips();  // Updated to use continuous spawning
+                gameEntityManager.continuousSpawnEnemyShips();
             }
         }, 0, 5000);
     }
 
     private void fireBullet(InputController inputController) {
-        Bullet bullet = playerShip.fireBullet(inputController);  // Pass InputController to determine bullet mode
+        // Player's bullet
+        Bullet bullet = playerShip.fireBullet(inputController);
         if (bullet != null) {
             gameEntityManager.addBullet(bullet);
             laserSound.play();
         }
+
+        // If the drone is active, make it fire as well
+        if (drone != null && drone.isActive()) {
+            drone.handleShooting(true); // Trigger drone shooting when the player shoots
+        }
     }
 
-    // Handle collision detection
+
     private void checkCollisions() {
         gameEntityManager.checkCollisions(gameState, playerShip, hitSound, explodeSound, logger);
     }
 
     private void clearScreen() {
-        gc.drawImage(backgroundImage, 0, 0, canvas.getWidth(), canvas.getHeight());
+        if (gameEntityManager.isBossActive()) {
+            gc.drawImage(backgroundImageBoss, 0, 0, canvas.getWidth(), canvas.getHeight());
+        } else {
+            gc.drawImage(backgroundImage, 0, 0, canvas.getWidth(), canvas.getHeight());
+        }
     }
 
     private void updatePlayerShip() {
@@ -272,10 +293,7 @@ public class AsteroidGame extends Application {
         if (inputController.isDownPressed()) playerShip.moveVerticallyDown();
 
         playerShip.rotateToMouse(inputController.getMouseX(), inputController.getMouseY());
-
-        // Update the shield status
         playerShip.updateShield();
-
         playerShip.move();
         playerShip.draw(gc);
         playerShip.handleScreenEdges(canvas.getWidth(), canvas.getHeight());
@@ -283,10 +301,10 @@ public class AsteroidGame extends Application {
 
     public void drawNumber(GraphicsContext gc, int number, double x, double y, SpriteLoader spriteLoader) {
         String numberString = Integer.toString(number);
-        double spacing = 20; // Adjust spacing between digits
+        double spacing = 20;
 
         for (int i = 0; i < numberString.length(); i++) {
-            int digit = Integer.parseInt(String.valueOf(numberString.charAt(i))); // Convert char to int
+            int digit = Integer.parseInt(String.valueOf(numberString.charAt(i)));
             Image sprite = spriteLoader.getSprite(NUMBER_SPRITES[digit]);
             gc.drawImage(sprite, x + i * spacing, y);
         }
@@ -296,23 +314,40 @@ public class AsteroidGame extends Application {
         gc.setFill(Color.WHITE);
         gc.setFont(new Font(20));
 
-        // Draw lives in the top left corner
         gc.drawImage(spriteLoader.getSprite("playerLife1_blue.png"), 20, 20);
         drawNumber(gc, gameState.getLives(), 60, 20, spriteLoader);
 
-        // Draw score in the top right corner
         double screenWidth = gc.getCanvas().getWidth();
         drawNumber(gc, gameState.getScore(), screenWidth - 100, 20, spriteLoader);
 
-        // Draw bullet mode
         String bulletMode = playerShip.getBulletMode();
         gc.fillText("Bullet Mode: " + bulletMode, screenWidth / 2 - 60, canvas.getHeight() - 30);
 
-        // Draw PlayerShip health bar
+        // Display drone status
+        String droneStatusText;
+        Color droneStatusColor;
+        if (drone != null && drone.isActive()) {
+            droneStatusText = "Drone: Active";
+            droneStatusColor = Color.GREEN;
+        } else {
+            long currentTime = System.currentTimeMillis();
+            long cooldownRemaining = (lastDroneTime + DRONE_COOLDOWN - currentTime) / 1000; // Convert to seconds
+            if (cooldownRemaining > 0) {
+                droneStatusText = "Drone: Cooldown " + cooldownRemaining + "s";
+                droneStatusColor = Color.RED;
+            } else {
+                droneStatusText = "Drone: Ready";
+                droneStatusColor = Color.GREEN;
+            }
+        }
+
+        gc.setFill(droneStatusColor);
+        gc.fillText(droneStatusText, screenWidth / 2 - 60, canvas.getHeight() - 10); // Display below bullet mode
+
         double playerHealthWidth = 200;
         double playerHealthHeight = 15;
-        double playerHealthX = 20; // Adjust the X position as needed
-        double playerHealthY = 60; // Adjust the Y position as needed
+        double playerHealthX = 20;
+        double playerHealthY = 60;
 
         gc.setFill(Color.DARKGRAY);
         gc.fillRect(playerHealthX, playerHealthY, playerHealthWidth, playerHealthHeight);
@@ -324,58 +359,48 @@ public class AsteroidGame extends Application {
         gc.setFont(new Font(15));
         gc.fillText("PLAYER HP: " + playerShip.getHealth() + "/100", playerHealthX + 50, playerHealthY + 12);
 
-        // If the boss is active, draw its health bar
         if (gameEntityManager.getBoss() != null) {
             double bossHealthWidth = 400;
             double bossHealthHeight = 20;
             double bossHealthX = (screenWidth - bossHealthWidth) / 2;
 
-            // Background of health bar
             gc.setFill(Color.DARKGRAY);
             gc.fillRect(bossHealthX, 10, bossHealthWidth, bossHealthHeight);
 
-            // Actual health
             gc.setFill(Color.RED);
-            gc.fillRect(bossHealthX, 10,
-                    bossHealthWidth * (gameEntityManager.getBoss().getHealth() / 100.0), bossHealthHeight);
-
-            // Boss health text
+            gc.fillRect(bossHealthX, 10, bossHealthWidth * (gameEntityManager.getBoss().getHealth() / 200.0), bossHealthHeight);
             gc.setFill(Color.WHITE);
             gc.setFont(new Font(15));
-            gc.fillText("BOSS HP: " + gameEntityManager.getBoss().getHealth() + "/100",
-                    bossHealthX + bossHealthWidth / 2 - 50, 45);
+            gc.fillText("BOSS HP: " + gameEntityManager.getBoss().getHealth() + "/200", bossHealthX + bossHealthWidth / 2 - 50, 45);
         }
     }
 
     private void triggerGameOver() {
         gameOver = true;
-        gameLoop.stop(); // Stop the game loop when the game is over
+        gameLoop.stop();
+        bossStageMusic.stop();
         explodeSound.play();
         logger.warning("Game Over! Final Score: " + gameState.getScore());
-        drawGameOver(); // Call the method to display the game over screen
+        drawGameOver();
     }
-
 
     private void drawGameOver() {
         gc.setFill(Color.RED);
         gc.setFont(new Font(40));
         gc.fillText("Game Over", canvas.getWidth() / 2 - 100, canvas.getHeight() / 2 - 150);
 
-        // Create the "Restart" button
         Button restartButton = new Button("Restart");
         restartButton.setPrefSize(200, 50);
         restartButton.setLayoutX(canvas.getWidth() / 2 - 100);
         restartButton.setLayoutY(canvas.getHeight() / 2 - 50);
         restartButton.setOnAction(e -> restartGame());
 
-        // Create the "Main Menu" button
         Button mainMenuButton = new Button("Main Menu");
         mainMenuButton.setPrefSize(200, 50);
         mainMenuButton.setLayoutX(canvas.getWidth() / 2 - 100);
         mainMenuButton.setLayoutY(canvas.getHeight() / 2 + 50);
         mainMenuButton.setOnAction(e -> returnToMainMenu());
 
-        // Clear previous children and add buttons to the game scene root
         Pane rootPane = (Pane) gameScene.getRoot();
         rootPane.getChildren().clear();
         rootPane.getChildren().addAll(canvas, restartButton, mainMenuButton);
@@ -384,36 +409,63 @@ public class AsteroidGame extends Application {
     }
 
     private void returnToMainMenu() {
-        // Clear all elements from the game scene to ensure a clean state
         Pane rootPane = (Pane) gameScene.getRoot();
-        rootPane.getChildren().clear(); // Clear game elements and UI elements
-        gameLoop.stop(); // Stop the game loop
-        playerShip.resetHealth(); // Reset player's health
-        playerShip.reset(840, 450, 5); // Reset player position for 1680x900
+        rootPane.getChildren().clear();
+        gameLoop.stop();
+        bossStageMusic.stop();
+        playerShip.resetHealth();
+        playerShip.reset(840, 450, 5);
 
-        // Switch back to the main menu scene
         Stage primaryStage = (Stage) gameScene.getWindow();
         primaryStage.setScene(menuScene);
         logger.info("Returned to main menu.");
     }
 
     private void restartGame() {
-        // Clear all children except the canvas to remove "Restart" and "Main Menu" buttons
         Pane rootPane = (Pane) gameScene.getRoot();
         rootPane.getChildren().clear();
-        rootPane.getChildren().add(canvas); // Add the canvas back for rendering the game
+        rootPane.getChildren().add(canvas);
 
         gameOver = false;
         gameState.reset();
-        playerShip.reset(840, 450, 5); // Centered for 1680x900 resolution
+        playerShip.reset(840, 450, 5);
         playerShip.resetHealth();
         gameEntityManager.clearAll();
         gameEntityManager.setBossActive(false);
         bossDefeated = false;
 
-        // Start the game loop when the user restarts the game
+        bossStageMusic.stop();
+        canSummonDrone = true; // Allow the player to summon the drone again after restart
+        lastDroneTime = 0; // Reset the last drone time for cooldown
+        drone = null; // Clear any existing drone
+
         gameLoop.start();
         logger.info("Game restarted.");
     }
 
+    private void handleDroneSummon() {
+        long currentTime = System.currentTimeMillis();
+
+        // Check if the player is pressing "Q" to summon a drone and if it's available
+        if (inputController.isSummonDrone() && canSummonDrone) {
+            drone = new Drone(playerShip, spriteLoader, gameEntityManager); // Pass gameEntityManager here
+            drone.activate();
+            canSummonDrone = false;
+            lastDroneTime = currentTime;
+            logger.info("Drone summoned!");
+        }
+
+        // Update the drone if it's active, passing the player's shooting state
+        if (drone != null && drone.isActive()) {
+            boolean playerShooting = inputController.isShootingPressed();
+            drone.update(playerShooting);
+            drone.draw(gc);
+        }
+
+        // Check if the cooldown has expired for summoning a new drone
+        if (!canSummonDrone && currentTime - lastDroneTime >= DRONE_COOLDOWN) {
+            canSummonDrone = true;
+            logger.info("Drone is ready to be summoned again.");
+        }
+    }
 }

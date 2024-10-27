@@ -332,7 +332,7 @@ public class GameEntityManager {
 
                     if (enemy.getHealth() <= 0) {
                         enemiesToRemove.add(enemy);  // Mark enemy for removal
-                        gameState.addScore(50);  // Add points for destroying an enemy
+                        gameState.addScore(2);  // Add points for destroying an enemy
 
                         // Trigger explosion at enemy's position
                         ShipExplosionEffect explosion = new ShipExplosionEffect(20);
