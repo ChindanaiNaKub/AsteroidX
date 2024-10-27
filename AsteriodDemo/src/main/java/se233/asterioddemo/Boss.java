@@ -45,7 +45,7 @@ public class Boss extends Character {
         this.originalY = y;
         this.size = size;
         this.speed = speed;
-        this.health = 100;
+        this.health = 200;
         this.bossBullets = new ArrayList<>();
         this.lastPatternChange = System.currentTimeMillis();
 
@@ -165,7 +165,7 @@ public class Boss extends Character {
         }
 
         // Draw health bar with phase indicator
-        double healthBarWidth = size * (health / 100.0);
+        double healthBarWidth = size * (health / 200.0);
         gc.setFill(getPhaseColor());
         gc.fillRect(x - size / 2, y - size - 10, healthBarWidth, 5);
 
