@@ -252,18 +252,22 @@ public class AsteroidGame extends Application {
     }
 
     private void checkShipAIMode() {
-        if (inputController.isShipAIMode()) {
-            aiMode = !aiMode; // Toggle the AI mode
-            if (aiMode) {
+        if (inputController.isAIModeActive()) {
+            if (!aiMode) {
+                aiMode = true; // Activate AI mode
                 shipAI = new ShipAI(playerShip, gameEntityManager, canvas.getWidth(), canvas.getHeight());
                 logger.info("AI Mode activated");
-            } else {
+            }
+        }
+
+        if (inputController.isAIModeDeactivate()) {
+            if (aiMode) {
+                aiMode = false; // Deactivate AI mode
                 shipAI = null;
                 logger.info("AI Mode deactivated");
             }
         }
     }
-
 
     private void checkCheatMode() {
         if (inputController.isCheatModeEnabled() && !gameEntityManager.isBossActive()) {

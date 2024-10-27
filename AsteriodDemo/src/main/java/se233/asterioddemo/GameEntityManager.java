@@ -514,7 +514,7 @@ public class GameEntityManager {
         gameState.addScore(2); // Example score for defeating an enemy ship.
 
         // Log the defeat of the enemy
-        logger.info("Enemy ship defeated! Score increased by 2.");
+        logger.info("Enemy ship defeated! "+ gameState.getScore());
 
         // Create an explosion effect at the enemy's location
         ShipExplosionEffect explosion = new ShipExplosionEffect(20);
