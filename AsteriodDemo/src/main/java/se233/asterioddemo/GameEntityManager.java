@@ -11,12 +11,12 @@ import java.util.logging.Logger;
 import static se233.asterioddemo.AsteroidGame.logger;
 
 public class GameEntityManager {
-    private List<Asteroid> asteroids;
+    public List<Asteroid> asteroids;
     private List<ExplosionEffect> explosions;
-    private List<Bullet> bullets;
-    private List<EnemyShip> enemyShips;
+    public List<Bullet> bullets;
+    public List<EnemyShip> enemyShips;
     private List<Bullet> enemyBullets;
-    private Boss boss;
+    public Boss boss;
     private boolean bossActive;
     private Random random;
 
@@ -320,7 +320,7 @@ public class GameEntityManager {
         }
     }
 
-    private void checkPlayerBulletEnemyCollisions(GameState gameState) {
+    public void checkPlayerBulletEnemyCollisions(GameState gameState) {
         List<Bullet> bulletsToRemove = new ArrayList<>();
         List<EnemyShip> enemiesToRemove = new ArrayList<>();
 
@@ -332,7 +332,7 @@ public class GameEntityManager {
 
                     if (enemy.getHealth() <= 0) {
                         enemiesToRemove.add(enemy);  // Mark enemy for removal
-                        gameState.addScore(2);  // Add points for destroying an enemy
+                        defeatEnemyShip(enemy, gameState, logger); // Add points for destroying an enemy
 
                         // Trigger explosion at enemy's position
                         ShipExplosionEffect explosion = new ShipExplosionEffect(20);
@@ -348,7 +348,7 @@ public class GameEntityManager {
     }
 
 
-    private void checkPlayerBulletAsteroidCollisions(GameState gameState, Logger logger) {
+    public void checkPlayerBulletAsteroidCollisions(GameState gameState, Logger logger) {
         List<Bullet> bulletsToRemove = new ArrayList<>();
         List<Asteroid> asteroidsToRemove = new ArrayList<>();
 
@@ -497,4 +497,21 @@ public class GameEntityManager {
             this.boss = null; // Ensure that the boss object is set to null when deactivating
         }
     }
+
+    public void defeatEnemyShip(EnemyShip enemy, GameState gameState, Logger logger) {
+        // Remove the enemy from the game
+        enemyShips.remove(enemy);
+
+        // Add score for defeating the enemy
+        gameState.addScore(2); // Example score for defeating an enemy ship.
+
+        // Log the defeat of the enemy
+        logger.info("Enemy ship defeated! Score increased by 2.");
+
+        // Create an explosion effect at the enemy's location
+        ShipExplosionEffect explosion = new ShipExplosionEffect(20);
+        explosion.createExplosion(enemy.getX(), enemy.getY(), enemy.getSize(), "standard");
+        shipExplosions.add(explosion);
+    }
+
 }
