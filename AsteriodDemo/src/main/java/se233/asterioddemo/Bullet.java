@@ -5,6 +5,7 @@ import javafx.scene.image.Image;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class Bullet {
     private double x, y;
@@ -45,6 +46,10 @@ public class Bullet {
         this.trails = new ArrayList<>();
         this.bulletMode = spriteName.contains("Blue11") ? "shuriken" :
                 spriteName.contains("Blue08") ? "pulse" : "default";
+
+        if (this.bulletImage == null) {
+            Logger.getLogger(Bullet.class.getName()).severe("Failed to load bullet image: " + spriteName);
+        }
     }
 
     public int getDamage() {
@@ -76,8 +81,8 @@ public class Bullet {
         }
 
         // Wrap around screen edges
-        if (x < 0) x = screenWidth;
-        if (x > screenWidth) x = 0;
+//        if (x < 0) x = screenWidth;
+//        if (x > screenWidth) x = 0;
         if (y < 0) y = screenHeight;
         if (y > screenHeight) y = 0;
     }
@@ -97,6 +102,11 @@ public class Bullet {
 
         if (bulletMode.equals("shuriken")) {
             gc.rotate(Math.toDegrees(angle));
+        }
+
+        if (bulletImage == null) {
+            Logger.getLogger(Bullet.class.getName()).warning("Attempted to draw bullet with null image.");
+            return;
         }
 
         gc.drawImage(bulletImage,

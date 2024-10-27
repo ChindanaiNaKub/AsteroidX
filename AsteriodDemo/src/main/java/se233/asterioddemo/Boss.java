@@ -114,7 +114,7 @@ public class Boss extends Character {
         switch (currentPattern) {
             case SINGLE:
                 if (Math.random() < 0.02) {
-                    bossBullets.add(new Bullet(x, y + size / 2, Math.PI / 2, spriteLoader, "laserGreen01.png", 20));
+                    bossBullets.add(new Bullet(x, y + size / 2, Math.PI / 2, spriteLoader, "laserRed12.png", 20));
                 }
                 break;
 
@@ -122,7 +122,7 @@ public class Boss extends Character {
                 if (Math.random() < 0.01) {
                     for (int i = -2; i <= 2; i++) {
                         double angle = Math.PI / 2 + (i * Math.PI / 8);
-                        bossBullets.add(new Bullet(x, y + size / 2, angle, spriteLoader, "laserRed01.png", 15));
+                        bossBullets.add(new Bullet(x, y + size / 2, angle, spriteLoader, "laserRed13.png", 15));
                     }
                 }
                 break;
@@ -132,7 +132,7 @@ public class Boss extends Character {
                     double baseAngle = System.currentTimeMillis() / 1000.0;
                     for (int i = 0; i < 8; i++) {
                         double angle = baseAngle + (i * Math.PI / 4);
-                        bossBullets.add(new Bullet(x, y, angle, spriteLoader, "laserBlue01.png", 12));
+                        bossBullets.add(new Bullet(x, y, angle, spriteLoader, "laserRed09.png", 12));
                     }
                 }
                 break;
@@ -141,7 +141,7 @@ public class Boss extends Character {
                 if (Math.random() < 0.015) {
                     double baseSpeed = 4;
                     for (int i = 0; i < 3; i++) {
-                        bossBullets.add(new Bullet(x + (i * 30), y + size / 2, Math.PI / 2, spriteLoader, "laserYellow01.png", (int) (baseSpeed + i)));
+                        bossBullets.add(new Bullet(x + (i * 30), y + size / 2, Math.PI / 2, spriteLoader, "laserRed16.png", (int) (baseSpeed + i)));
                     }
                 }
                 break;
