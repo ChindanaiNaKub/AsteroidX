@@ -212,7 +212,6 @@ public class AsteroidGame extends Application {
         }
     }
 
-
     private void updateGame() {
         try {
             clearScreen();

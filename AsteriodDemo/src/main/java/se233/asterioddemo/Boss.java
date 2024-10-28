@@ -85,7 +85,7 @@ public class Boss extends Character {
     public void move() {
         // Horizontal movement with edge bouncing
         x += speed;
-        if (x > 800 - size || x < 0) {
+        if (x > 1280 - size || x < 0) {
             speed = -speed; // Switch direction when hitting edges
         }
         // Vertical movement based on phase

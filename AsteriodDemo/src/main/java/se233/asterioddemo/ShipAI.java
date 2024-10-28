@@ -18,6 +18,7 @@ public class ShipAI {
     private static final long SHOOT_COOLDOWN = 300; // Milliseconds between shots
     private final AudioClip laserSound;
 
+
     public ShipAI(PlayerShip playerShip, GameEntityManager entityManager, double screenWidth, double screenHeight,AudioClip laserSound) {
         this.playerShip = playerShip;
         this.entityManager = entityManager;
