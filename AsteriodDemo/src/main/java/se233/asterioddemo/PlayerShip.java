@@ -7,6 +7,7 @@ import javafx.scene.paint.Color;
 import java.util.ArrayList;
 import java.util.List;
 
+
 public class PlayerShip extends Character {
     private int health = 100;
     private double angle;
@@ -29,14 +30,33 @@ public class PlayerShip extends Character {
     private final long HIT_ANIMATION_DURATION = 500; // milliseconds
     private long shieldActivationTime = 0;
     private final long SHIELD_DURATION = 3000; // Shield lasts for 3 seconds
+    private AnimatedSprite shipSprite;
 
     public PlayerShip(double x, double y, double speed, double size, SpriteLoader spriteLoader) {
         super(x, y, speed, size);
         this.angle = 0;
         this.health = 100;
-        this.spriteLoader = spriteLoader;
-        // Load the ship sprite from the sheet using the SpriteLoader
-        this.shipImage = spriteLoader.getSprite("playerShip1_blue.png");  // Adjust based on your XML
+        this.spriteLoader = spriteLoader; // Assign the spriteLoader instance
+
+        try {
+            // Load newship.png sprite sheet using the spriteLoader
+            Image newShipImage = new Image(getClass().getResource("/sprite/newship.png").toExternalForm());
+            if (newShipImage.isError()) {
+                throw new IllegalArgumentException("Failed to load ship sprite sheet");
+            }
+
+            int frameCount = 4; // Assuming 4 frames in a row
+            int frameWidth = 117;
+            int frameHeight = 117;
+            int columns = 4;
+            int rows = 1;
+
+            // Initialize AnimatedSprite with the new sprite sheet
+            this.shipSprite = new AnimatedSprite(newShipImage, frameCount, columns, rows, 0, 0, frameWidth, frameHeight);
+        } catch (Exception e) {
+            System.err.println("Error loading ship sprite: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -57,23 +77,23 @@ public class PlayerShip extends Character {
             }
         }
 
-        // Draw ship
-        double imageWidth = shipImage.getWidth();
-        double imageHeight = shipImage.getHeight();
-        gc.drawImage(shipImage, -imageWidth/2, -imageHeight/2, imageWidth, imageHeight);
+        // Update and draw the animated sprite for the ship
+        shipSprite.tick();
+        shipSprite.render(gc, -shipSprite.getWidth() / 2, -shipSprite.getHeight() / 2);
 
         // Draw shield if active
         if (isShieldActive) {
-            drawShield(gc, imageWidth * 1.2);
+            drawShield(gc, shipSprite.getWidth() * 1.2);
         }
 
-        // Draw thrust effect (existing code)
+        // Draw thrust effect
         if (isThrusting) {
             drawThrustEffect(gc);
         }
 
         gc.restore();
     }
+
 
     private void drawShield(GraphicsContext gc, double size) {
         gc.setStroke(Color.rgb(100, 200, 255, shieldAlpha));
