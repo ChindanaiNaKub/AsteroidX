@@ -150,12 +150,12 @@ public class AsteroidGame extends Application {
     }
 
     private void setSoundVolumes() {
-        laserSound.setVolume(0.1);
-        hitSound.setVolume(0.1);
+        laserSound.setVolume(0.2);
+        hitSound.setVolume(0.2);
         explodeSound.setVolume(0.3);
         thrustSound.setVolume(0.2);
         bossMusic.setVolume(0.6);
-        bossStageMusic.setVolume(0.7);
+        bossStageMusic.setVolume(0.6);
     }
 
     private void startGame(Stage primaryStage) {
@@ -175,7 +175,7 @@ public class AsteroidGame extends Application {
         lastDroneTime = 0; // Reset the last drone time
         drone = null; // Ensure no drone is active at the start
 
-        shipAI = new ShipAI(playerShip, gameEntityManager, canvas.getWidth(), canvas.getHeight());
+        shipAI = new ShipAI(playerShip, gameEntityManager, canvas.getWidth(), canvas.getHeight(),laserSound);
 
         primaryStage.setScene(gameScene);
         gameLoop.start();
@@ -255,7 +255,7 @@ public class AsteroidGame extends Application {
         if (inputController.isAIModeActive()) {
             if (!aiMode) {
                 aiMode = true; // Activate AI mode
-                shipAI = new ShipAI(playerShip, gameEntityManager, canvas.getWidth(), canvas.getHeight());
+                shipAI = new ShipAI(playerShip, gameEntityManager, canvas.getWidth(), canvas.getHeight(),laserSound);
                 logger.info("AI Mode activated");
             }
         }
