@@ -364,31 +364,47 @@ public class GameEntityManager {
     }
 
     public void checkPlayerBulletAsteroidCollisions(GameState gameState, Logger logger) {
+        // Lists to track what needs to be removed and added
         List<Bullet> bulletsToRemove = new ArrayList<>();
         List<Asteroid> asteroidsToRemove = new ArrayList<>();
+        List<Asteroid> newAsteroidsToAdd = new ArrayList<>();
+        List<ExplosionEffect> newExplosions = new ArrayList<>();
 
+        // First pass: Check collisions and collect changes
         for (Bullet bullet : bullets) {
             for (Asteroid asteroid : asteroids) {
-                if (isColliding(bullet, asteroid)) {
+                if (!bulletsToRemove.contains(bullet) && !asteroidsToRemove.contains(asteroid) && isColliding(bullet, asteroid)) {
+                    // Mark entities for removal
+                    bulletsToRemove.add(bullet);
+                    asteroidsToRemove.add(asteroid);
+
+                    // Update score
                     gameState.addScore(asteroid.getPoints());
                     logger.info("Asteroid destroyed! Score: " + gameState.getScore());
 
-                    // Create an explosion at the asteroid's position when it's destroyed
+                    // Create explosion effect
                     ExplosionEffect explosion = new ExplosionEffect(asteroid.getSize());
                     explosion.createExplosion(asteroid.getX(), asteroid.getY(), asteroid.getSize());
-                    explosions.add(explosion);  // Store the explosion effect
+                    newExplosions.add(explosion);
 
-                    List<Asteroid> newAsteroids = asteroid.split();
-                    asteroids.addAll(newAsteroids);
-                    bulletsToRemove.add(bullet);
-                    asteroidsToRemove.add(asteroid);
-                    break;
+                    // Get new asteroids from splitting
+                    List<Asteroid> splitAsteroids = asteroid.split();
+                    if (!splitAsteroids.isEmpty()) {
+                        newAsteroidsToAdd.addAll(splitAsteroids);
+                    }
+
+                    break; // Move to next bullet since this one hit something
                 }
             }
         }
 
-        bullets.removeAll(bulletsToRemove);
-        asteroids.removeAll(asteroidsToRemove);
+        // Second pass: Safely apply all changes
+        synchronized (this) {
+            bullets.removeAll(bulletsToRemove);
+            asteroids.removeAll(asteroidsToRemove);
+            asteroids.addAll(newAsteroidsToAdd);
+            explosions.addAll(newExplosions);
+        }
     }
 
     private void checkPlayerAsteroidCollisions(PlayerShip playerShip, GameState gameState, AudioClip hitSound, AudioClip explodeSound) {
@@ -424,19 +440,19 @@ public class GameEntityManager {
                     playerShip.reduceHealth(20);  // Reduce player health on hit
                     bossBulletsToRemove.add(bossBullet);
                     hitSound.play();
-                    logger.info("Player hit by boss bullet! Player health: " + playerShip.getHealth());
+                    logger.warning("Player hit by boss bullet! Player health: " + playerShip.getHealth());
 
                     if (playerShip.getHealth() <= 0) {
                         // If the player's health drops to 0, they lose a life
                         gameState.loseLife();
-                        logger.info("Player lost a life! Lives remaining: " + gameState.getLives());
+                        logger.warning("Player lost a life! Lives remaining: " + gameState.getLives());
 
                         if (!gameState.isGameOver()) {
                             // If the game is not over, respawn the player with full health
                             playerShip.resetHealth();
                             playerShip.reset(640, 360, playerShip.getSpeed()); // Respawn at a default position
                             playerShip.activateShield(); // Optionally activate a temporary shield
-                            logger.info("Player respawned with " + gameState.getLives() + " lives.");
+                            logger.warning("Player respawned with " + gameState.getLives() + " lives.");
                         } else {
                             logger.warning("Player has no remaining lives. Game Over!");
                         }
@@ -466,27 +482,41 @@ public class GameEntityManager {
 
     // Method for Bullet vs Boss collision
     private boolean isColliding(Bullet bullet, Boss boss) {
-        if (boss == null) return false; // Ensure boss is not null before checking collision
+        if (bullet == null || boss == null) {
+            return false;
+        } // Ensure boss is not null before checking collision
         double distance = Math.hypot(bullet.getX() - boss.getX(), bullet.getY() - boss.getY());
         return distance < (bullet.getSize() / 2 + boss.getSize() / 2);
     }
 
     private boolean isColliding(Character entityA, Character entityB) {
+        if (entityA == null || entityB == null) {
+            return false;
+        }
         double distance = Math.hypot(entityA.getX() - entityB.getX(), entityA.getY() - entityB.getY());
         return distance < (entityA.getSize() / 2 + entityB.getSize() / 2);
     }
 
     private boolean isColliding(Bullet bullet, PlayerShip player) {
+        if (bullet == null || player == null) {
+            return false;
+        }
         double distance = Math.hypot(bullet.getX() - player.getX(), bullet.getY() - player.getY());
         return distance < (bullet.getRadius() + player.getSize() / 2);
     }
 
     private boolean isColliding(Bullet bullet, EnemyShip enemy) {
+        if (bullet == null || enemy == null) {
+            return false;
+        }
         double distance = Math.hypot(bullet.getX() - enemy.getX(), bullet.getY() - enemy.getY());
         return distance < (bullet.getRadius() + enemy.getSize() / 2);
     }
 
     private boolean isColliding(Bullet bullet, Asteroid asteroid) {
+        if (bullet == null || asteroid == null) {
+            return false;
+        }
         double distance = Math.hypot(bullet.getX() - asteroid.getX(), bullet.getY() - asteroid.getY());
         return distance < (bullet.getRadius() + asteroid.getSize() / 2);
     }
