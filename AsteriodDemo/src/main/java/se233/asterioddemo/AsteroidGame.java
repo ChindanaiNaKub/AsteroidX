@@ -70,6 +70,10 @@ public class AsteroidGame extends Application {
     private ShipAI shipAI;
     private boolean aiMode = false;
 
+    public static void main(String[] args) {
+        launch(args);
+    }
+
     @Override
     public void start(Stage primaryStage) {
         try (InputStream configFile = AsteroidGame.class.getClassLoader().getResourceAsStream("logging.properties")) {

@@ -5,6 +5,7 @@ module se233.asterioddemo {
     requires java.logging;
     requires java.xml;
     requires java.desktop;
+    requires org.jspecify;
 
 
     opens se233.asterioddemo to javafx.fxml;
