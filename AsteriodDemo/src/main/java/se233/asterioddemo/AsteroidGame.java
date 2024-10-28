@@ -6,6 +6,7 @@ import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -77,7 +78,7 @@ public class AsteroidGame extends Application {
         backgroundImageBoss = new Image(getClass().getResource("/sprite/background_1.png").toExternalForm());
 
         Pane menuLayout = createMainMenu(primaryStage);
-        menuScene = new Scene(menuLayout, 800, 600);
+        menuScene = new Scene(menuLayout, 1280, 720);
 
         primaryStage.setTitle("Asteroid Game");
         primaryStage.setScene(menuScene);
@@ -100,13 +101,22 @@ public class AsteroidGame extends Application {
         );
         menuLayout.setBackground(new Background(backgroundImage));
 
+        // Create the label with "AsteroidX"
+        Label titleLabel = new Label("AsteroidX");
+        titleLabel.setStyle("-fx-font-size: 48px; -fx-text-fill: #FFD700; -fx-font-weight: bold; -fx-effect: dropshadow(gaussian, black, 5, 0.5, 0, 0);");
+        // Style explanation:
+        // - #FFD700 is a gold/yellow color for high contrast.
+        // - dropshadow adds a subtle shadow to improve readability.
+
+        // Create buttons
         Button startButton = createStyledButton("Start", primaryStage);
         Button exitButton = createStyledButton("Exit", primaryStage);
 
         startButton.setOnAction(e -> startGame(primaryStage));
         exitButton.setOnAction(e -> primaryStage.close());
 
-        menuLayout.getChildren().addAll(startButton, exitButton);
+        // Add label and buttons to the layout
+        menuLayout.getChildren().addAll(titleLabel, startButton, exitButton);
         return menuLayout;
     }
 
@@ -421,25 +431,44 @@ public class AsteroidGame extends Application {
     }
 
     private void drawGameOver() {
-        gc.setFill(Color.RED);
-        gc.setFont(new Font(40));
-        gc.fillText("Game Over", canvas.getWidth() / 2 - 100, canvas.getHeight() / 2 - 150);
+        // Create a VBox layout for the Game Over menu
+        VBox gameOverLayout = new VBox(20); // 20 is the spacing between elements
+        gameOverLayout.setStyle("-fx-alignment: center; -fx-padding: 50px;");
+        gameOverLayout.setPrefSize(1280, 720); // Set the size to match the other scenes
 
-        Button restartButton = new Button("Restart");
-        restartButton.setPrefSize(200, 50);
-        restartButton.setLayoutX(canvas.getWidth() / 2 - 100);
-        restartButton.setLayoutY(canvas.getHeight() / 2 - 50);
+        // Create the Game Over label with styling
+        Label gameOverLabel = new Label("Game Over!");
+        gameOverLabel.setStyle("-fx-font-size: 48px; -fx-text-fill: #FF0000; -fx-font-weight: bold;");
+
+        // Create the final score label with styling
+        Label scoreLabel = new Label("Final Score: " + gameState.getScore());
+        scoreLabel.setStyle("-fx-font-size: 24px; -fx-text-fill: #FFFFFF;");
+
+        // Use the existing createStyledButton method for styling the buttons
+        Button restartButton = createStyledButton("Restart", (Stage) gameScene.getWindow());
         restartButton.setOnAction(e -> restartGame());
 
-        Button mainMenuButton = new Button("Main Menu");
-        mainMenuButton.setPrefSize(200, 50);
-        mainMenuButton.setLayoutX(canvas.getWidth() / 2 - 100);
-        mainMenuButton.setLayoutY(canvas.getHeight() / 2 + 50);
+        Button mainMenuButton = createStyledButton("Main Menu", (Stage) gameScene.getWindow());
         mainMenuButton.setOnAction(e -> returnToMainMenu());
 
+        // Add all elements to the VBox
+        gameOverLayout.getChildren().addAll(gameOverLabel, scoreLabel, restartButton, mainMenuButton);
+
+        // Set a background image similar to the main menu for consistency
+        Image gameOverBackgroundImage = new Image(getClass().getResource("/sprite/background.png").toExternalForm());
+        BackgroundImage backgroundImage = new BackgroundImage(
+                gameOverBackgroundImage,
+                BackgroundRepeat.NO_REPEAT,
+                BackgroundRepeat.NO_REPEAT,
+                BackgroundPosition.CENTER,
+                new BackgroundSize(1280, 720, false, false, false, false)
+        );
+        gameOverLayout.setBackground(new Background(backgroundImage));
+
+        // Clear the root pane and add the game-over layout
         Pane rootPane = (Pane) gameScene.getRoot();
         rootPane.getChildren().clear();
-        rootPane.getChildren().addAll(canvas, restartButton, mainMenuButton);
+        rootPane.getChildren().add(gameOverLayout);
 
         logger.info("Game Over screen displayed.");
     }
