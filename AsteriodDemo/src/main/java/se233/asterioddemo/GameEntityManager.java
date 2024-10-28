@@ -13,7 +13,7 @@ import static se233.asterioddemo.AsteroidGame.logger;
 public class GameEntityManager {
     public List<Asteroid> asteroids;
     private List<ExplosionEffect> explosions;
-    private List<Bullet> bullets;
+    public List<Bullet> bullets;
     public List<EnemyShip> enemyShips;
     private List<Bullet> enemyBullets;
     public Boss boss;
@@ -320,7 +320,7 @@ public class GameEntityManager {
         }
     }
 
-    private void checkPlayerBulletEnemyCollisions(GameState gameState) {
+    public void checkPlayerBulletEnemyCollisions(GameState gameState) {
         List<Bullet> bulletsToRemove = new ArrayList<>();
         List<EnemyShip> enemiesToRemove = new ArrayList<>();
 
@@ -498,6 +498,24 @@ public class GameEntityManager {
         }
     }
 
+
+    public void defeatEnemyShip(EnemyShip enemy, GameState gameState, Logger logger) {
+        // Remove the enemy from the game
+        enemyShips.remove(enemy);
+
+        // Add score for defeating the enemy
+        gameState.addScore(2); // Example score for defeating an enemy ship.
+
+        // Log the defeat of the enemy
+        logger.info("Enemy ship defeated! Score increased by 2.");
+
+        // Create an explosion effect at the enemy's location
+        ShipExplosionEffect explosion = new ShipExplosionEffect(20);
+        explosion.createExplosion(enemy.getX(), enemy.getY(), enemy.getSize(), "standard");
+        shipExplosions.add(explosion);
+    }
+
+
     public List<Asteroid> getAsteroids() {
         return asteroids;
     }
@@ -505,6 +523,7 @@ public class GameEntityManager {
     public List<EnemyShip> getEnemyShips() {
         return enemyShips;
     }
+
 
     public void defeatEnemyShip(EnemyShip enemy, GameState gameState, Logger logger) {
         // Remove the enemy from the game
@@ -521,4 +540,5 @@ public class GameEntityManager {
         explosion.createExplosion(enemy.getX(), enemy.getY(), enemy.getSize(), "standard");
         shipExplosions.add(explosion);
     }
+
 }
