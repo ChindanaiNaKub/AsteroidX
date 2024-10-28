@@ -423,10 +423,23 @@ public class GameEntityManager {
                 if (isColliding(bossBullet, playerShip)) {
                     playerShip.reduceHealth(20);  // Reduce player health on hit
                     bossBulletsToRemove.add(bossBullet);
+                    hitSound.play();
                     logger.info("Player hit by boss bullet! Player health: " + playerShip.getHealth());
 
                     if (playerShip.getHealth() <= 0) {
-                        gameState.setGameOver(true);
+                        // If the player's health drops to 0, they lose a life
+                        gameState.loseLife();
+                        logger.info("Player lost a life! Lives remaining: " + gameState.getLives());
+
+                        if (!gameState.isGameOver()) {
+                            // If the game is not over, respawn the player with full health
+                            playerShip.resetHealth();
+                            playerShip.reset(640, 360, playerShip.getSpeed()); // Respawn at a default position
+                            playerShip.activateShield(); // Optionally activate a temporary shield
+                            logger.info("Player respawned with " + gameState.getLives() + " lives.");
+                        } else {
+                            logger.warning("Player has no remaining lives. Game Over!");
+                        }
                     }
                 }
             }
