@@ -49,74 +49,92 @@ public class GameEntityManager {
     }
 
     public void updateAndDrawEnemyShipExplosions(GraphicsContext gc) {
-        Iterator<ShipExplosionEffect> iterator = shipExplosions.iterator();
-        while (iterator.hasNext()) {
-            ShipExplosionEffect explosion = iterator.next();
-            explosion.update();
-            explosion.draw(gc);
-            if (!explosion.isActive()) {
-                iterator.remove();
+        try {
+            Iterator<ShipExplosionEffect> iterator = shipExplosions.iterator();
+            while (iterator.hasNext()) {
+                ShipExplosionEffect explosion = iterator.next();
+                explosion.update();
+                explosion.draw(gc);
+                if (!explosion.isActive()) {
+                    iterator.remove();
+                }
             }
+        } catch (Exception e) {
+            logger.severe("Error updating enemy ship explosions: " + e.getMessage());
         }
     }
 
     public void updateAndDrawExplosions(GraphicsContext gc) {
-        Iterator<ExplosionEffect> explosionIter = explosions.iterator();
-        while (explosionIter.hasNext()) {
-            ExplosionEffect explosion = explosionIter.next();
-            explosion.update();
-            explosion.draw(gc);
-
-            // Remove the explosion if it is no longer active
-            if (!explosion.isActive()) {
-                explosionIter.remove();
+        try {
+            Iterator<ExplosionEffect> explosionIter = explosions.iterator();
+            while (explosionIter.hasNext()) {
+                ExplosionEffect explosion = explosionIter.next();
+                explosion.update();
+                explosion.draw(gc);
+                if (!explosion.isActive()) {
+                    explosionIter.remove();
+                }
             }
+        } catch (Exception e) {
+            logger.severe("Error updating explosions: " + e.getMessage());
         }
     }
 
 
     public void startBossStage(AudioClip bossMusic) {
-        if (!bossActive) {
-            logger.info("Attempting to start boss stage...");
-            bossActive = true;
-            boss = new Boss(400, 100, 2.0, 91, spriteLoader);
-            clearAll();  // Clear other entities but don't deactivate the boss
-            if (bossMusic != null) {
-                bossMusic.play();
+        try {
+            if (!bossActive) {
+                logger.info("Attempting to start boss stage...");
+                bossActive = true;
+                boss = new Boss(400, 100, 2.0, 91, spriteLoader);
+                clearAll();
+                if (bossMusic != null) {
+                    bossMusic.play();
+                }
+                logger.info("Boss created successfully");
+            } else {
+                logger.info("Boss is already active, skipping creation.");
             }
-            logger.info("Boss created successfully");
-        } else {
-            logger.info("Boss is already active, skipping creation.");
+        } catch (Exception e) {
+            logger.severe("Failed to start boss stage: " + e.getMessage());
         }
     }
 
     public void continuousSpawnAsteroids(GraphicsContext gc) {
-        if (!bossActive) {
-            long currentTime = System.currentTimeMillis();
-            if (currentTime - lastAsteroidSpawnTime >= ASTEROID_SPAWN_COOLDOWN) {
-                for (int i = 0; i < ASTEROIDS_PER_SPAWN; i++) {
-                    spawnSingleAsteroid(gc);
+        try {
+            if (!bossActive) {
+                long currentTime = System.currentTimeMillis();
+                if (currentTime - lastAsteroidSpawnTime >= ASTEROID_SPAWN_COOLDOWN) {
+                    for (int i = 0; i < ASTEROIDS_PER_SPAWN; i++) {
+                        spawnSingleAsteroid(gc);
+                    }
+                    lastAsteroidSpawnTime = currentTime;
                 }
-                lastAsteroidSpawnTime = currentTime;
             }
+        } catch (Exception e) {
+            logger.severe("Error during continuous asteroid spawning: " + e.getMessage());
         }
     }
 
     private void spawnSingleAsteroid(GraphicsContext gc) {
-        double speed = 1.0 + random.nextDouble() * 2.0; // Speed between 1.0 and 3.0
-        AsteroidSize size = getRandomAsteroidSize();
+        try {
+            double speed = 1.0 + random.nextDouble() * 2.0;
+            AsteroidSize size = getRandomAsteroidSize();
 
-        Asteroid asteroid = new Asteroid(
-                random.nextInt((int) gc.getCanvas().getWidth()),
-                random.nextInt((int) gc.getCanvas().getHeight()),
-                speed,
-                size.size,
-                size.points,
-                false,  // Not a split asteroid
-                spriteLoader
-        );
+            Asteroid asteroid = new Asteroid(
+                    random.nextInt((int) gc.getCanvas().getWidth()),
+                    random.nextInt((int) gc.getCanvas().getHeight()),
+                    speed,
+                    size.size,
+                    size.points,
+                    false,
+                    spriteLoader
+            );
 
-        asteroids.add(asteroid);
+            asteroids.add(asteroid);
+        } catch (Exception e) {
+            logger.severe("Error spawning single asteroid: " + e.getMessage());
+        }
     }
 
     public boolean isBossActive() {
@@ -149,23 +167,32 @@ public class GameEntityManager {
     }
 
     public void continuousSpawnEnemyShips() {
-        if (!bossActive) {
-            long currentTime = System.currentTimeMillis();
-            if (currentTime - lastEnemySpawnTime >= ENEMY_SPAWN_COOLDOWN) {
-                spawnEnemyShip();
-                lastEnemySpawnTime = currentTime;
+        try {
+            if (!bossActive) {
+                long currentTime = System.currentTimeMillis();
+                if (currentTime - lastEnemySpawnTime >= ENEMY_SPAWN_COOLDOWN) {
+                    spawnEnemyShip();
+                    lastEnemySpawnTime = currentTime;
+                }
             }
+        } catch (Exception e) {
+            logger.severe("Error during continuous enemy ship spawning: " + e.getMessage());
         }
     }
 
-    private void spawnEnemyShip() {
-        double x = random.nextInt(800);  // Screen width assumption
-        double y = random.nextInt(600);  // Screen height assumption
-        double speed = 1.0 + random.nextDouble() * 2.0;
-        double size = 75;  // Define the enemy size
-        double angle = Math.PI / 2;  // Define or randomize the angle
 
-        enemyShips.add(new EnemyShip(x, y, speed, size, angle, spriteLoader));
+    private void spawnEnemyShip() {
+        try {
+            double x = random.nextInt(800);
+            double y = random.nextInt(600);
+            double speed = 1.0 + random.nextDouble() * 2.0;
+            double size = 75;
+            double angle = Math.PI / 2;
+
+            enemyShips.add(new EnemyShip(x, y, speed, size, angle, spriteLoader));
+        } catch (Exception e) {
+            logger.severe("Error spawning enemy ship: " + e.getMessage());
+        }
     }
 
     public void updateAndDrawBoss(GraphicsContext gc, PlayerShip playerShip, GameState gameState, AudioClip hitSound, Logger logger) {
@@ -192,25 +219,33 @@ public class GameEntityManager {
     }
 
     public void updateAndDrawBullets(GraphicsContext gc, double screenWidth, double screenHeight) {
-        Iterator<Bullet> bulletIter = bullets.iterator();
-        while (bulletIter.hasNext()) {
-            Bullet bullet = bulletIter.next();
-            bullet.update(screenWidth, screenHeight);
-            if (bullet.isOffScreen(screenWidth, screenHeight)) {
-                bulletIter.remove();
-            } else {
-                bullet.draw(gc);
+        try {
+            Iterator<Bullet> bulletIter = bullets.iterator();
+            while (bulletIter.hasNext()) {
+                Bullet bullet = bulletIter.next();
+                bullet.update(screenWidth, screenHeight);
+                if (bullet.isOffScreen(screenWidth, screenHeight)) {
+                    bulletIter.remove();
+                } else {
+                    bullet.draw(gc);
+                }
             }
+        } catch (Exception e) {
+            logger.severe("Error updating bullets: " + e.getMessage());
         }
     }
 
     public void updateAndDrawAsteroids(GraphicsContext gc) {
-        Iterator<Asteroid> asteroidIter = asteroids.iterator();
-        while (asteroidIter.hasNext()) {
-            Asteroid asteroid = asteroidIter.next();
-            asteroid.move();
-            asteroid.handleScreenEdges(gc.getCanvas().getWidth(), gc.getCanvas().getHeight());
-            asteroid.draw(gc);
+        try {
+            Iterator<Asteroid> asteroidIter = asteroids.iterator();
+            while (asteroidIter.hasNext()) {
+                Asteroid asteroid = asteroidIter.next();
+                asteroid.move();
+                asteroid.handleScreenEdges(gc.getCanvas().getWidth(), gc.getCanvas().getHeight());
+                asteroid.draw(gc);
+            }
+        } catch (Exception e) {
+            logger.severe("Error updating asteroids: " + e.getMessage());
         }
     }
 
@@ -228,21 +263,24 @@ public class GameEntityManager {
     }
 
     public void updateAndDrawEnemyShips(GraphicsContext gc, double playerX, double playerY) {
-        Iterator<EnemyShip> enemyIter = enemyShips.iterator();
-        while (enemyIter.hasNext()) {
-            EnemyShip enemy = enemyIter.next();
-            enemy.move(playerX, playerY);
+        try {
+            Iterator<EnemyShip> enemyIter = enemyShips.iterator();
+            while (enemyIter.hasNext()) {
+                EnemyShip enemy = enemyIter.next();
+                enemy.move(playerX, playerY);
+                if (enemy.canShoot()) {
+                    Bullet bullet = enemy.shootTowards(playerX, playerY);
+                    enemyBullets.add(bullet);
+                }
 
-            if (enemy.canShoot()) {
-                Bullet bullet = enemy.shootTowards(playerX, playerY);
-                enemyBullets.add(bullet);
+                if (enemy.getHealth() <= 0) {
+                    enemyIter.remove();
+                } else {
+                    enemy.draw(gc);
+                }
             }
-
-            if (enemy.getHealth() <= 0) {
-                enemyIter.remove();
-            } else {
-                enemy.draw(gc);
-            }
+        } catch (Exception e) {
+            logger.severe("Error updating enemy ships: " + e.getMessage());
         }
     }
 
@@ -257,25 +295,6 @@ public class GameEntityManager {
 
         if (bossActive && boss != null) {
             checkBossCollisions(playerShip, gameState, logger, hitSound);
-        }
-    }
-
-    private void checkPlayerBulletBossCollisions(PlayerShip playerShip, GameState gameState, Logger logger, AudioClip hitSound) {
-        if (boss != null && bossActive) {
-            List<Bullet> bulletsToRemove = new ArrayList<>();
-            for (Bullet bullet : playerShip.getBullets()) {
-                if (isColliding(bullet, boss)) {
-                    boss.takeDamage();
-                    bulletsToRemove.add(bullet);
-                    hitSound.play();
-                    logger.info("Boss hit! Boss health: " + boss.getHealth());
-
-                    if (boss.getHealth() <= 0) {
-                        defeatBoss(gameState, logger);
-                    }
-                }
-            }
-            playerShip.getBullets().removeAll(bulletsToRemove);
         }
     }
 
@@ -555,24 +574,6 @@ public class GameEntityManager {
             this.boss = null; // Ensure that the boss object is set to null when deactivating
         }
     }
-
-
-//    public void defeatEnemyShip(EnemyShip enemy, GameState gameState, Logger logger) {
-//        // Remove the enemy from the game
-//        enemyShips.remove(enemy);
-//
-//        // Add score for defeating the enemy
-//        gameState.addScore(2); // Example score for defeating an enemy ship.
-//
-//        // Log the defeat of the enemy
-//        logger.info("Enemy ship defeated! Score increased by 2.");
-//
-//        // Create an explosion effect at the enemy's location
-//        ShipExplosionEffect explosion = new ShipExplosionEffect(20);
-//        explosion.createExplosion(enemy.getX(), enemy.getY(), enemy.getSize(), "standard");
-//        shipExplosions.add(explosion);
-//    }
-
 
     public List<Asteroid> getAsteroids() {
         return asteroids;
