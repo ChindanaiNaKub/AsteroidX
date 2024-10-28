@@ -73,9 +73,13 @@ public class AsteroidGame extends Application {
             e.printStackTrace();
         }
 
-        spriteLoader = new SpriteLoader("/sprite/sheet.png", "/sprite/sheet.xml");
-        backgroundImage = new Image(getClass().getResource("/sprite/background.png").toExternalForm());
-        backgroundImageBoss = new Image(getClass().getResource("/sprite/background_1.png").toExternalForm());
+        try {
+            spriteLoader = new SpriteLoader("/sprite/sheet.png", "/sprite/sheet.xml");
+            backgroundImage = new Image(getClass().getResource("/sprite/background.png").toExternalForm());
+            backgroundImageBoss = new Image(getClass().getResource("/sprite/background_1.png").toExternalForm());
+        } catch (Exception e) {
+            logger.severe("Error loading resources: " + e.getMessage());
+        }
 
         Pane menuLayout = createMainMenu(primaryStage);
         menuScene = new Scene(menuLayout, 1280, 720);
@@ -91,15 +95,19 @@ public class AsteroidGame extends Application {
         VBox menuLayout = new VBox(30);
         menuLayout.setStyle("-fx-alignment: center;");
 
-        Image menuBackgroundImage = new Image(getClass().getResource("/sprite/background.png").toExternalForm());
-        BackgroundImage backgroundImage = new BackgroundImage(
-                menuBackgroundImage,
-                BackgroundRepeat.NO_REPEAT,
-                BackgroundRepeat.NO_REPEAT,
-                BackgroundPosition.CENTER,
-                new BackgroundSize(1680, 900, false, false, false, false)
-        );
-        menuLayout.setBackground(new Background(backgroundImage));
+        try {
+            Image menuBackgroundImage = new Image(getClass().getResource("/sprite/background.png").toExternalForm());
+            BackgroundImage backgroundImage = new BackgroundImage(
+                    menuBackgroundImage,
+                    BackgroundRepeat.NO_REPEAT,
+                    BackgroundRepeat.NO_REPEAT,
+                    BackgroundPosition.CENTER,
+                    new BackgroundSize(1680, 900, false, false, false, false)
+            );
+            menuLayout.setBackground(new Background(backgroundImage));
+        } catch (Exception e) {
+            logger.severe("Error setting menu background: " + e.getMessage());
+        }
 
         // Create the label with "AsteroidX"
         Label titleLabel = new Label("AsteroidX");
@@ -130,33 +138,41 @@ public class AsteroidGame extends Application {
     }
 
     private void setupGameScene(Stage primaryStage) {
-        Pane gameRoot = new Pane();
-        canvas = new Canvas(1280, 720);
-        gameRoot.getChildren().add(canvas);
-        gameScene = new Scene(gameRoot, 1280, 720);
+        try {
+            Pane gameRoot = new Pane();
+            canvas = new Canvas(1280, 720);
+            gameRoot.getChildren().add(canvas);
+            gameScene = new Scene(gameRoot, 1280, 720);
 
-        gc = canvas.getGraphicsContext2D();
-        gameState = new GameState();
-        inputController = new InputController(gameScene);
-        gameEntityManager = new GameEntityManager(spriteLoader);
-        playerShip = new PlayerShip(640, 360, 5, 30, spriteLoader);
+            gc = canvas.getGraphicsContext2D();
+            gameState = new GameState();
+            inputController = new InputController(gameScene);
+            gameEntityManager = new GameEntityManager(spriteLoader);
+            playerShip = new PlayerShip(640, 360, 5, 30, spriteLoader);
 
-        laserSound = new AudioClip(getClass().getResource("/sounds/laser.m4a").toExternalForm());
-        hitSound = new AudioClip(getClass().getResource("/sounds/hit.m4a").toExternalForm());
-        explodeSound = new AudioClip(getClass().getResource("/sounds/explode.m4a").toExternalForm());
-        thrustSound = new AudioClip(getClass().getResource("/sounds/thrust.m4a").toExternalForm());
-        bossMusic = new AudioClip(getClass().getResource("/sounds/boss.mp3").toExternalForm());
-        bossStageMusic = new AudioClip(getClass().getResource("/sounds/FEIN.wav").toExternalForm());
+            laserSound = new AudioClip(getClass().getResource("/sounds/laser.m4a").toExternalForm());
+            hitSound = new AudioClip(getClass().getResource("/sounds/hit.m4a").toExternalForm());
+            explodeSound = new AudioClip(getClass().getResource("/sounds/explode.m4a").toExternalForm());
+            thrustSound = new AudioClip(getClass().getResource("/sounds/thrust.m4a").toExternalForm());
+            bossMusic = new AudioClip(getClass().getResource("/sounds/boss.mp3").toExternalForm());
+            bossStageMusic = new AudioClip(getClass().getResource("/sounds/FEIN.wav").toExternalForm());
 
-        setSoundVolumes();
-        startAsteroidAndEnemySpawning();
+            setSoundVolumes();
+            startAsteroidAndEnemySpawning();
 
-        gameLoop = new AnimationTimer() {
-            @Override
-            public void handle(long now) {
-                updateGame();
-            }
-        };
+            gameLoop = new AnimationTimer() {
+                @Override
+                public void handle(long now) {
+                    try {
+                        updateGame();
+                    } catch (Exception e) {
+                        logger.severe("Error in game loop: " + e.getMessage());
+                    }
+                }
+            };
+        } catch (Exception e) {
+            logger.severe("Error setting up game scene: " + e.getMessage());
+        }
     }
 
     private void setSoundVolumes() {
@@ -169,84 +185,85 @@ public class AsteroidGame extends Application {
     }
 
     private void startGame(Stage primaryStage) {
-        Pane rootPane = (Pane) gameScene.getRoot();
-        rootPane.getChildren().clear();
-        rootPane.getChildren().add(canvas);
+        try {
+            Pane rootPane = (Pane) gameScene.getRoot();
+            rootPane.getChildren().clear();
+            rootPane.getChildren().add(canvas);
 
-        gameOver = false;
-        bossDefeated = false;
-        gameState.reset();
-        playerShip.reset(840, 450, 5);
-        playerShip.resetHealth();
-        gameEntityManager.clearAll();
-        gameEntityManager.setBossActive(false);
+            gameOver = false;
+            bossDefeated = false;
+            gameState.reset();
+            playerShip.reset(840, 450, 5);
+            playerShip.resetHealth();
+            gameEntityManager.clearAll();
+            gameEntityManager.setBossActive(false);
 
-        canSummonDrone = true; // Allow the player to summon the drone
-        lastDroneTime = 0; // Reset the last drone time
-        drone = null; // Ensure no drone is active at the start
+            canSummonDrone = true;
+            lastDroneTime = 0;
+            drone = null;
 
-        shipAI = new ShipAI(playerShip, gameEntityManager, canvas.getWidth(), canvas.getHeight(),laserSound);
+            shipAI = new ShipAI(playerShip, gameEntityManager, canvas.getWidth(), canvas.getHeight(), laserSound);
 
-        primaryStage.setScene(gameScene);
-        gameLoop.start();
-        logger.info("Game started.");
+            primaryStage.setScene(gameScene);
+            gameLoop.start();
+            logger.info("Game started.");
+        } catch (Exception e) {
+            logger.severe("Error starting game: " + e.getMessage());
+        }
     }
 
 
     private void updateGame() {
-        clearScreen();
+        try {
+            clearScreen();
 
-        if (!gameOver) {
+            if (!gameOver) {
+                checkShipAIMode();
 
-            checkShipAIMode();
-
-            if (aiMode && shipAI != null) {
-                shipAI.update();
-                playerShip.draw(gc);
-            } else {
-                updatePlayerShip();  // Player-controlled updates
-                handleDroneSummon(); // Add this line to handle drone behavior
-            }
-
-
-            if (!gameEntityManager.isBossActive()) {
-                // Normal stage behavior
-                gameEntityManager.updateAndDrawBullets(gc, canvas.getWidth(), canvas.getHeight());
-                gameEntityManager.updateAndDrawEnemyShips(gc, playerShip.getX(), playerShip.getY());
-                gameEntityManager.updateAndDrawEnemyBullets(gc, canvas.getWidth(), canvas.getHeight());
-                gameEntityManager.updateAndDrawAsteroids(gc);
-                gameEntityManager.updateAndDrawEnemyShipExplosions(gc);
-                checkBossStage();
-                checkCheatMode();
-            } else {
-                // Boss stage behavior
-                gameEntityManager.updateAndDrawBoss(gc, playerShip, gameState, hitSound, logger);
-                gameEntityManager.updateAndDrawBullets(gc, canvas.getWidth(), canvas.getHeight());
-
-                // Check if the boss is defeated
-                if (gameEntityManager.getBoss() != null && gameEntityManager.getBoss().getHealth() <= 0) {
-                    gameEntityManager.setBossActive(false);
-                    bossDefeated = true;
-                    bossStageMusic.stop(); // Ensure the music stops immediately
-                    logger.info("Boss defeated, returning to normal stage.");
+                if (aiMode && shipAI != null) {
+                    shipAI.update();
+                    playerShip.draw(gc);
+                } else {
+                    updatePlayerShip();
+                    handleDroneSummon();
                 }
+
+                if (!gameEntityManager.isBossActive()) {
+                    gameEntityManager.updateAndDrawBullets(gc, canvas.getWidth(), canvas.getHeight());
+                    gameEntityManager.updateAndDrawEnemyShips(gc, playerShip.getX(), playerShip.getY());
+                    gameEntityManager.updateAndDrawEnemyBullets(gc, canvas.getWidth(), canvas.getHeight());
+                    gameEntityManager.updateAndDrawAsteroids(gc);
+                    gameEntityManager.updateAndDrawEnemyShipExplosions(gc);
+                    checkBossStage();
+                    checkCheatMode();
+                } else {
+                    gameEntityManager.updateAndDrawBoss(gc, playerShip, gameState, hitSound, logger);
+                    gameEntityManager.updateAndDrawBullets(gc, canvas.getWidth(), canvas.getHeight());
+
+                    if (gameEntityManager.getBoss() != null && gameEntityManager.getBoss().getHealth() <= 0) {
+                        gameEntityManager.setBossActive(false);
+                        bossDefeated = true;
+                        bossStageMusic.stop();
+                        logger.info("Boss defeated, returning to normal stage.");
+                    }
+                }
+
+                gameEntityManager.updateAndDrawExplosions(gc);
+                drawUI(gc, spriteLoader, gameState);
+                checkCollisions();
+
+                if (gameState.isGameOver()) {
+                    triggerGameOver();
+                }
+
+                if (!aiMode && inputController.isShootingPressed()) {
+                    fireBullet(inputController);
+                }
+            } else {
+                drawGameOver();
             }
-
-            gameEntityManager.updateAndDrawExplosions(gc);
-            drawUI(gc, spriteLoader, gameState);
-            checkCollisions();
-
-            if (gameState.isGameOver()) {
-                triggerGameOver();
-            }
-
-            // Handle shooting input if in manual mode.
-            if (!aiMode && inputController.isShootingPressed()) {
-                fireBullet(inputController);
-            }
-
-        } else {
-            drawGameOver();
+        } catch (Exception e) {
+            logger.severe("Error updating game state: " + e.getMessage());
         }
     }
 
@@ -288,21 +305,33 @@ public class AsteroidGame extends Application {
     }
 
     private void startAsteroidAndEnemySpawning() {
-        Timer spawnTimer = new Timer(true);
+        try {
+            Timer spawnTimer = new Timer(true);
 
-        spawnTimer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                gameEntityManager.continuousSpawnAsteroids(gc);
-            }
-        }, 0, 4000);
+            spawnTimer.scheduleAtFixedRate(new TimerTask() {
+                @Override
+                public void run() {
+                    try {
+                        gameEntityManager.continuousSpawnAsteroids(gc);
+                    } catch (Exception e) {
+                        logger.severe("Error spawning asteroids: " + e.getMessage());
+                    }
+                }
+            }, 0, 4000);
 
-        spawnTimer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                gameEntityManager.continuousSpawnEnemyShips();
-            }
-        }, 0, 5000);
+            spawnTimer.scheduleAtFixedRate(new TimerTask() {
+                @Override
+                public void run() {
+                    try {
+                        gameEntityManager.continuousSpawnEnemyShips();
+                    } catch (Exception e) {
+                        logger.severe("Error spawning enemy ships: " + e.getMessage());
+                    }
+                }
+            }, 0, 5000);
+        } catch (Exception e) {
+            logger.severe("Error setting up spawning: " + e.getMessage());
+        }
     }
 
     private void fireBullet(InputController inputController) {
@@ -509,28 +538,29 @@ public class AsteroidGame extends Application {
     }
 
     private void handleDroneSummon() {
-        long currentTime = System.currentTimeMillis();
+        try {
+            long currentTime = System.currentTimeMillis();
 
-        // Check if the player is pressing "Q" to summon a drone and if it's available
-        if (inputController.isSummonDrone() && canSummonDrone) {
-            drone = new Drone(playerShip, spriteLoader, gameEntityManager); // Pass gameEntityManager here
-            drone.activate();
-            canSummonDrone = false;
-            lastDroneTime = currentTime;
-            logger.info("Drone summoned!");
-        }
+            if (inputController.isSummonDrone() && canSummonDrone) {
+                drone = new Drone(playerShip, spriteLoader, gameEntityManager);
+                drone.activate();
+                canSummonDrone = false;
+                lastDroneTime = currentTime;
+                logger.info("Drone summoned!");
+            }
 
-        // Update the drone if it's active, passing the player's shooting state
-        if (drone != null && drone.isActive()) {
-            boolean playerShooting = inputController.isShootingPressed();
-            drone.update(playerShooting);
-            drone.draw(gc);
-        }
+            if (drone != null && drone.isActive()) {
+                boolean playerShooting = inputController.isShootingPressed();
+                drone.update(playerShooting);
+                drone.draw(gc);
+            }
 
-        // Check if the cooldown has expired for summoning a new drone
-        if (!canSummonDrone && currentTime - lastDroneTime >= DRONE_COOLDOWN) {
-            canSummonDrone = true;
-            logger.info("Drone is ready to be summoned again.");
+            if (!canSummonDrone && currentTime - lastDroneTime >= DRONE_COOLDOWN) {
+                canSummonDrone = true;
+                logger.info("Drone is ready to be summoned again.");
+            }
+        } catch (Exception e) {
+            logger.severe("Error handling drone summon: " + e.getMessage());
         }
     }
 }
