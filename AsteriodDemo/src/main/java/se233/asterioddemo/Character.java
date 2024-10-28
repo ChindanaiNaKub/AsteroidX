@@ -2,7 +2,7 @@ package se233.asterioddemo;
 
 import javafx.scene.canvas.GraphicsContext;
 
-public abstract class Character {
+public abstract class Character implements GameObject{
     protected double x, y;
     protected double speed;
     protected double size;

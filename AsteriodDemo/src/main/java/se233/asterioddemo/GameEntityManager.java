@@ -498,6 +498,7 @@ public class GameEntityManager {
         }
     }
 
+
     public void defeatEnemyShip(EnemyShip enemy, GameState gameState, Logger logger) {
         // Remove the enemy from the game
         enemyShips.remove(enemy);
@@ -512,6 +513,15 @@ public class GameEntityManager {
         ShipExplosionEffect explosion = new ShipExplosionEffect(20);
         explosion.createExplosion(enemy.getX(), enemy.getY(), enemy.getSize(), "standard");
         shipExplosions.add(explosion);
+    }
+
+
+    public List<Asteroid> getAsteroids() {
+        return asteroids;
+    }
+
+    public List<EnemyShip> getEnemyShips() {
+        return enemyShips;
     }
 
 }

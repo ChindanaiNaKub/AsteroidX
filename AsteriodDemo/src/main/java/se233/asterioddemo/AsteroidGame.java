@@ -19,6 +19,7 @@ import java.util.TimerTask;
 import java.util.logging.Logger;
 import java.util.logging.LogManager;
 
+
 public class AsteroidGame extends Application {
 
     private Canvas canvas;
@@ -59,6 +60,9 @@ public class AsteroidGame extends Application {
     };
 
     private static final int BOSS_TRIGGER_SCORE = 17;
+
+    private ShipAI shipAI;
+    private boolean aiMode = false;
 
     @Override
     public void start(Stage primaryStage) {
@@ -171,6 +175,8 @@ public class AsteroidGame extends Application {
         lastDroneTime = 0; // Reset the last drone time
         drone = null; // Ensure no drone is active at the start
 
+        shipAI = new ShipAI(playerShip, gameEntityManager, canvas.getWidth(), canvas.getHeight());
+
         primaryStage.setScene(gameScene);
         gameLoop.start();
         logger.info("Game started.");
@@ -181,8 +187,17 @@ public class AsteroidGame extends Application {
         clearScreen();
 
         if (!gameOver) {
-            updatePlayerShip();
-            handleDroneSummon(); // Add this line to handle drone behavior
+
+            checkShipAIMode();
+
+            if (aiMode && shipAI != null) {
+                shipAI.update();
+                playerShip.draw(gc);
+            } else {
+                updatePlayerShip();  // Player-controlled updates
+                handleDroneSummon(); // Add this line to handle drone behavior
+            }
+
 
             if (!gameEntityManager.isBossActive()) {
                 // Normal stage behavior
@@ -215,13 +230,16 @@ public class AsteroidGame extends Application {
                 triggerGameOver();
             }
 
-            if (inputController.isShootingPressed()) {
+            // Handle shooting input if in manual mode.
+            if (!aiMode && inputController.isShootingPressed()) {
                 fireBullet(inputController);
             }
+
         } else {
             drawGameOver();
         }
     }
+
 
     private void checkBossStage() {
         if (!gameEntityManager.isBossActive() && !bossDefeated &&
@@ -232,6 +250,20 @@ public class AsteroidGame extends Application {
             logger.info("Boss stage started, playing boss stage music.");
         }
     }
+
+    private void checkShipAIMode() {
+        if (inputController.isShipAIMode()) {
+            aiMode = !aiMode; // Toggle the AI mode
+            if (aiMode) {
+                shipAI = new ShipAI(playerShip, gameEntityManager, canvas.getWidth(), canvas.getHeight());
+                logger.info("AI Mode activated");
+            } else {
+                shipAI = null;
+                logger.info("AI Mode deactivated");
+            }
+        }
+    }
+
 
     private void checkCheatMode() {
         if (inputController.isCheatModeEnabled() && !gameEntityManager.isBossActive()) {

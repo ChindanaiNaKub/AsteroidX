@@ -154,6 +154,41 @@ public class PlayerShip extends Character {
         return Color.RED;
     }
 
+    // Add this overloaded method in PlayerShip class to handle AI shooting directly with an angle
+    public Bullet fireBullet(double angle) {
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastBulletTime >= bulletCooldown) {
+            lastBulletTime = currentTime;
+            double shipTipOffset = this.getSize() / 2;
+            double bulletStartX = this.getX() + Math.cos(angle) * shipTipOffset;
+            double bulletStartY = this.getY() + Math.sin(angle) * shipTipOffset;
+
+            // Select the appropriate bullet sprite and damage based on the current bullet mode
+            String bulletSprite;
+            int damage;
+            switch (bulletMode) {
+                case "shuriken":
+                    bulletSprite = "laserBlue11.png";
+                    damage = 12;
+                    break;
+                case "pluse":
+                    bulletSprite = "laserBlue08.png";
+                    damage = 15;
+                    break;
+                default:
+                    bulletSprite = "laserBlue07.png";
+                    damage = 10;
+                    break;
+            }
+
+            Bullet bullet = new Bullet(bulletStartX, bulletStartY, angle, spriteLoader, bulletSprite, damage);
+            bullets.add(bullet);
+            return bullet;
+        }
+        return null;
+    }
+
+
     // Method to fire bullets from the ship
     public Bullet fireBullet(InputController inputController) {
         long currentTime = System.currentTimeMillis();
@@ -324,4 +359,9 @@ public class PlayerShip extends Character {
     public double getSpeed() {
         return speed;
     }
+
+    public void setAngle(double angle) {
+        this.angle = angle;
+    }
+
 }

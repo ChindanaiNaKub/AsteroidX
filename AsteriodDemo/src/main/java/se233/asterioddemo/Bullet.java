@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
-public class Bullet {
+public class Bullet implements GameObject {
     private double x, y;
     private double angle;
     private double speed = 3;
