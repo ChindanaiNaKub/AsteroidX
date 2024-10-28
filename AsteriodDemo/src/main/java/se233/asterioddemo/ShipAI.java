@@ -1,5 +1,7 @@
 package se233.asterioddemo;
 
+import javafx.scene.media.AudioClip;
+
 import java.util.List;
 import java.util.Comparator;
 import java.util.Optional;
@@ -14,12 +16,14 @@ public class ShipAI {
     private static final double SHOOTING_ACCURACY = 0.95; // AI accuracy factor
     private final AtomicLong lastShootTime = new AtomicLong(0);
     private static final long SHOOT_COOLDOWN = 300; // Milliseconds between shots
+    private final AudioClip laserSound;
 
-    public ShipAI(PlayerShip playerShip, GameEntityManager entityManager, double screenWidth, double screenHeight) {
+    public ShipAI(PlayerShip playerShip, GameEntityManager entityManager, double screenWidth, double screenHeight,AudioClip laserSound) {
         this.playerShip = playerShip;
         this.entityManager = entityManager;
         this.screenWidth = screenWidth;
         this.screenHeight = screenHeight;
+        this.laserSound = laserSound;
     }
 
     public void update() {
@@ -143,6 +147,7 @@ public class ShipAI {
                         entityManager.addBullet(bullet);
                     }
                     lastShootTime.set(currentTime);
+                    laserSound.play();
                 }
             }
         }
