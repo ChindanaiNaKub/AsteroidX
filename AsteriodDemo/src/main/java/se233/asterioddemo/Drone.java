@@ -160,4 +160,9 @@ public class Drone extends Character {
     public boolean isActive() {
         return isActive;
     }
+
+    public double getAngle() {
+        return this.angle;
+    }
+
 }

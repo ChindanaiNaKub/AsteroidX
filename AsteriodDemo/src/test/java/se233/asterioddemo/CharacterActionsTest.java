@@ -71,17 +71,27 @@ public class CharacterActionsTest {
     }
 
     @Test
-    public void testDroneMovesRelativeToPlayer() {
+    public void testDroneOrbitsAroundPlayer() {
+        // Move player horizontally and activate drone.
         playerShip.moveHorizontallyRight();
         drone.activate();
-        drone.update(false); // Updating without shooting
 
-        // Check if the drone's position is updated relative to the player's position.
-        double expectedX = playerShip.getX() + Math.cos(playerShip.getAngle()) * 100;
-        double expectedY = playerShip.getY() + Math.sin(playerShip.getAngle()) * 100;
+        // Simulate multiple updates to allow the drone to orbit around the player.
+        for (int i = 0; i < 10; i++) {
+            drone.update(false); // Update without shooting
+        }
 
-        assertEquals(expectedX, drone.getX(), 0.1, "Drone X should be relative to player position.");
-        assertEquals(expectedY, drone.getY(), 0.1, "Drone Y should be relative to player position.");
+        // Calculate expected position of the drone considering the rotation angle around the player.
+        double orbitRadius = 100; // Distance of drone from the player
+        double droneAngle = drone.getAngle(); // Retrieve the current angle of the drone
+
+        double expectedX = playerShip.getX() + Math.cos(droneAngle) * orbitRadius;
+        double expectedY = playerShip.getY() + Math.sin(droneAngle) * orbitRadius;
+
+        // Check that the drone is in the expected orbit position with a tolerance.
+        assertEquals(expectedX, drone.getX(), 0.1, "Drone X should be in orbit around the player.");
+        assertEquals(expectedY, drone.getY(), 0.1, "Drone Y should be in orbit around the player.");
     }
+
 }
 
