@@ -39,6 +39,11 @@ public class AsteroidGame extends Application {
     private AudioClip thrustSound;
     private AudioClip bossMusic;
     private AudioClip bossStageMusic;
+    private boolean isMovingLeft = false;
+    private boolean isMovingRight = false;
+    private boolean isMovingUp = false;
+    private boolean isMovingDown = false;
+
 
     static final Logger logger = Logger.getLogger(AsteroidGame.class.getName());
 
@@ -361,12 +366,50 @@ public class AsteroidGame extends Application {
     }
 
     private void updatePlayerShip() {
-        if (inputController.isLeftPressed()) playerShip.moveHorizontallyLeft();
-        if (inputController.isRightPressed()) playerShip.moveHorizontallyRight();
-        if (inputController.isUpPressed()) playerShip.moveVerticallyUp();
-        if (inputController.isDownPressed()) playerShip.moveVerticallyDown();
+        if (inputController.isLeftPressed()) {
+            if (!isMovingLeft) {
+                logger.info("PlayerShip moved left");
+                isMovingLeft = true;
+            }
+            playerShip.moveHorizontallyLeft();
+        } else {
+            isMovingLeft = false;
+        }
+
+        // Check for right movement input
+        if (inputController.isRightPressed()) {
+            if (!isMovingRight) {
+                logger.info("PlayerShip moved right");
+                isMovingRight = true;
+            }
+            playerShip.moveHorizontallyRight();
+        } else {
+            isMovingRight = false;
+        }
+
+        // Check for up movement input
+        if (inputController.isUpPressed()) {
+            if (!isMovingUp) {
+                logger.info("PlayerShip moved up");
+                isMovingUp = true;
+            }
+            playerShip.moveVerticallyUp();
+        } else {
+            isMovingUp = false;
+        }
+
+        if (inputController.isDownPressed()) {
+            if (!isMovingDown) {
+                logger.info("PlayerShip moved down");
+                isMovingDown = true;
+            }
+            playerShip.moveVerticallyDown();
+        } else {
+            isMovingDown = false;
+        }
 
         playerShip.rotateToMouse(inputController.getMouseX(), inputController.getMouseY());
+
         playerShip.updateShield();
         playerShip.move();
         playerShip.draw(gc);
