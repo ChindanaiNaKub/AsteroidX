@@ -321,32 +321,47 @@ public class GameEntityManager {
     }
 
     public void checkPlayerBulletEnemyCollisions(GameState gameState) {
-        List<Bullet> bulletsToRemove = new ArrayList<>();
-        List<EnemyShip> enemiesToRemove = new ArrayList<>();
+        // Use Iterator approach for better performance in game loop
+        Iterator<Bullet> bulletIterator = bullets.iterator();
 
-        for (Bullet bullet : bullets) {
-            for (EnemyShip enemy : enemyShips) {
+        while (bulletIterator.hasNext()) {
+            Bullet bullet = bulletIterator.next();
+            Iterator<EnemyShip> enemyIterator = enemyShips.iterator();
+            boolean bulletHit = false;
+
+            while (enemyIterator.hasNext() && !bulletHit) {
+                EnemyShip enemy = enemyIterator.next();
+
                 if (isColliding(bullet, enemy)) {
-                    enemy.takeDamage(10);  // Reduce enemy health
-                    bulletsToRemove.add(bullet);  // Mark bullet for removal
+                    // Deal damage to enemy
+                    enemy.takeDamage(10);
 
+                    // Remove the bullet that hit
+                    bulletIterator.remove();
+                    bulletHit = true;  // Mark that this bullet hit something
+
+                    // Check if enemy is destroyed
                     if (enemy.getHealth() <= 0) {
-                        enemiesToRemove.add(enemy);  // Mark enemy for removal
-                        defeatEnemyShip(enemy, gameState, logger); // Add points for destroying an enemy
+                        // Remove the enemy
+                        enemyIterator.remove();
 
-                        // Trigger explosion at enemy's position
+                        // Handle scoring and game state
+                        defeatEnemyShip(enemy, gameState, logger);
+
+                        // Create explosion effect
                         ShipExplosionEffect explosion = new ShipExplosionEffect(20);
-                        explosion.createExplosion(enemy.getX(), enemy.getY(), enemy.getSize(), "standard");
+                        explosion.createExplosion(
+                                enemy.getX(),
+                                enemy.getY(),
+                                enemy.getSize(),
+                                "standard"
+                        );
                         shipExplosions.add(explosion);
                     }
                 }
             }
         }
-
-        bullets.removeAll(bulletsToRemove);
-        enemyShips.removeAll(enemiesToRemove);
     }
-
 
     public void checkPlayerBulletAsteroidCollisions(GameState gameState, Logger logger) {
         List<Bullet> bulletsToRemove = new ArrayList<>();
@@ -499,21 +514,21 @@ public class GameEntityManager {
     }
 
 
-    public void defeatEnemyShip(EnemyShip enemy, GameState gameState, Logger logger) {
-        // Remove the enemy from the game
-        enemyShips.remove(enemy);
-
-        // Add score for defeating the enemy
-        gameState.addScore(2); // Example score for defeating an enemy ship.
-
-        // Log the defeat of the enemy
-        logger.info("Enemy ship defeated! Score increased by 2.");
-
-        // Create an explosion effect at the enemy's location
-        ShipExplosionEffect explosion = new ShipExplosionEffect(20);
-        explosion.createExplosion(enemy.getX(), enemy.getY(), enemy.getSize(), "standard");
-        shipExplosions.add(explosion);
-    }
+//    public void defeatEnemyShip(EnemyShip enemy, GameState gameState, Logger logger) {
+//        // Remove the enemy from the game
+//        enemyShips.remove(enemy);
+//
+//        // Add score for defeating the enemy
+//        gameState.addScore(2); // Example score for defeating an enemy ship.
+//
+//        // Log the defeat of the enemy
+//        logger.info("Enemy ship defeated! Score increased by 2.");
+//
+//        // Create an explosion effect at the enemy's location
+//        ShipExplosionEffect explosion = new ShipExplosionEffect(20);
+//        explosion.createExplosion(enemy.getX(), enemy.getY(), enemy.getSize(), "standard");
+//        shipExplosions.add(explosion);
+//    }
 
 
     public List<Asteroid> getAsteroids() {
