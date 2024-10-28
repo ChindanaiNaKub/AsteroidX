@@ -524,4 +524,21 @@ public class GameEntityManager {
         return enemyShips;
     }
 
+
+    public void defeatEnemyShip(EnemyShip enemy, GameState gameState, Logger logger) {
+        // Remove the enemy from the game
+        enemyShips.remove(enemy);
+
+        // Add score for defeating the enemy
+        gameState.addScore(2); // Example score for defeating an enemy ship.
+
+        // Log the defeat of the enemy
+        logger.info("Enemy ship defeated! "+ gameState.getScore());
+
+        // Create an explosion effect at the enemy's location
+        ShipExplosionEffect explosion = new ShipExplosionEffect(20);
+        explosion.createExplosion(enemy.getX(), enemy.getY(), enemy.getSize(), "standard");
+        shipExplosions.add(explosion);
+    }
+
 }
