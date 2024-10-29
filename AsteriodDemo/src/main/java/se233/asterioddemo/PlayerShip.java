@@ -3,6 +3,7 @@ package se233.asterioddemo;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
+import se233.asterioddemo.exception.SpriteNotFoundException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,7 +43,7 @@ public class PlayerShip extends Character {
             // Load newship.png sprite sheet using the spriteLoader
             Image newShipImage = new Image(getClass().getResource("/sprite/newship.png").toExternalForm());
             if (newShipImage.isError()) {
-                throw new IllegalArgumentException("Failed to load ship sprite sheet");
+                throw new SpriteNotFoundException("Failed to load ship sprite sheet");
             }
 
             int frameCount = 4; // Assuming 4 frames in a row
