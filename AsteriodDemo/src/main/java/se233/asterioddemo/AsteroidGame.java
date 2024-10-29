@@ -367,6 +367,25 @@ public class AsteroidGame extends Application {
         } else {
             gc.drawImage(backgroundImage, 0, 0, canvas.getWidth(), canvas.getHeight());
         }
+
+        // Draw grid overlay
+        drawGrid();
+    }
+
+    private void drawGrid() {
+        gc.setStroke(Color.rgb(255, 255, 255, 0.1)); // White with 10% opacity
+        gc.setLineWidth(0.5);
+
+        // Draw vertical lines
+        double gridSize = 50; // Adjust this value to change grid size
+        for (double x = 0; x <= canvas.getWidth(); x += gridSize) {
+            gc.strokeLine(x, 0, x, canvas.getHeight());
+        }
+
+        // Draw horizontal lines
+        for (double y = 0; y <= canvas.getHeight(); y += gridSize) {
+            gc.strokeLine(0, y, canvas.getWidth(), y);
+        }
     }
 
     private void updatePlayerShip() {
