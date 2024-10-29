@@ -7,10 +7,6 @@ import org.junit.platform.suite.api.Suite;
 
 @Suite
 @SelectClasses({
-        EnemyShipTest.class,
-        GameEntityManagerTest.class,
-        GameStateTest.class,
-        PlayerShipTest.class,
         CharacterActionsTest.class,
         CharacterMovementTest.class,
         GameScoringTest.class

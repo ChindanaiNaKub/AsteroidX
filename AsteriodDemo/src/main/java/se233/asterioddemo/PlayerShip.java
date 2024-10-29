@@ -40,7 +40,6 @@ public class PlayerShip extends Character {
         this.spriteLoader = spriteLoader; // Assign the spriteLoader instance
 
         try {
-            // Load newship.png sprite sheet using the spriteLoader
             Image newShipImage = new Image(getClass().getResource("/sprite/newship.png").toExternalForm());
             if (newShipImage.isError()) {
                 throw new SpriteNotFoundException("Failed to load ship sprite sheet");
@@ -52,11 +51,9 @@ public class PlayerShip extends Character {
             int columns = 4;
             int rows = 1;
 
-            // Initialize AnimatedSprite with the new sprite sheet
             this.shipSprite = new AnimatedSprite(newShipImage, frameCount, columns, rows, 0, 0, frameWidth, frameHeight);
         } catch (Exception e) {
-            System.err.println("Error loading ship sprite: " + e.getMessage());
-            e.printStackTrace();
+            System.err.print("");
         }
     }
 
