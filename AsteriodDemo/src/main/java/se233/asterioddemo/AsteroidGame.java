@@ -70,6 +70,11 @@ public class AsteroidGame extends Application {
     private ShipAI shipAI;
     private boolean aiMode = false;
 
+    private double backgroundX = 0;
+    private double backgroundY = 0;
+    private double backgroundSpeed = 0.5; // Adjust speed as needed
+    private double elapsedTime = 0;
+
     public static void main(String[] args) {
         launch(args);
     }
@@ -85,7 +90,7 @@ public class AsteroidGame extends Application {
         try {
             spriteLoader = new SpriteLoader("/sprite/sheet.png", "/sprite/sheet.xml");
             backgroundImage = new Image(getClass().getResource("/sprite/background.png").toExternalForm());
-            backgroundImageBoss = new Image(getClass().getResource("/sprite/background_1.png").toExternalForm());
+            backgroundImageBoss = new Image(getClass().getResource("/sprite/nebula.jpg").toExternalForm());
         } catch (Exception e) {
             logger.severe("Error loading resources: " + e.getMessage());
         }
@@ -363,7 +368,26 @@ public class AsteroidGame extends Application {
 
     private void clearScreen() {
         if (gameEntityManager.isBossActive()) {
-            gc.drawImage(backgroundImageBoss, 0, 0, canvas.getWidth(), canvas.getHeight());
+            // Calculate background movement
+            elapsedTime += 0.016; // Assuming 60 FPS, adjust if different
+
+            // Create a sine wave movement pattern
+            backgroundX = Math.sin(elapsedTime) * 50; // Horizontal movement
+            backgroundY = Math.cos(elapsedTime) * 30; // Vertical movement
+
+            // Draw the background with offset
+            // Draw it multiple times to cover screen during movement
+            for (int x = -1; x <= 1; x++) {
+                for (int y = -1; y <= 1; y++) {
+                    gc.drawImage(
+                            backgroundImageBoss,
+                            backgroundX + x * canvas.getWidth(),
+                            backgroundY + y * canvas.getHeight(),
+                            canvas.getWidth(),
+                            canvas.getHeight()
+                    );
+                }
+            }
         } else {
             gc.drawImage(backgroundImage, 0, 0, canvas.getWidth(), canvas.getHeight());
         }
