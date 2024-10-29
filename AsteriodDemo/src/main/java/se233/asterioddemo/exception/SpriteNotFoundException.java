@@ -1,6 +1,6 @@
 package se233.asterioddemo.exception;
 
-public class SpriteNotFoundException extends Exception {
+public class SpriteNotFoundException extends RuntimeException {
     public SpriteNotFoundException(String message) {
         super(message);
     }

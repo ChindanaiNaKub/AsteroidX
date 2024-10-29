@@ -13,7 +13,11 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import javafx.scene.media.AudioClip;
+import se233.asterioddemo.exception.DrawingException;
+import se233.asterioddemo.exception.GameException;
+import se233.asterioddemo.exception.SpriteNotFoundException;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -83,7 +87,7 @@ public class AsteroidGame extends Application {
     public void start(Stage primaryStage) {
         try (InputStream configFile = AsteroidGame.class.getClassLoader().getResourceAsStream("logging.properties")) {
             LogManager.getLogManager().readConfiguration(configFile);
-        } catch (Exception e) {
+        } catch (GameException | IOException e) {
             e.printStackTrace();
         }
 
@@ -91,7 +95,7 @@ public class AsteroidGame extends Application {
             spriteLoader = new SpriteLoader("/sprite/sheet.png", "/sprite/sheet.xml");
             backgroundImage = new Image(getClass().getResource("/sprite/background.png").toExternalForm());
             backgroundImageBoss = new Image(getClass().getResource("/sprite/nebula.jpg").toExternalForm());
-        } catch (Exception e) {
+        } catch (SpriteNotFoundException e) {
             logger.severe("Error loading resources: " + e.getMessage());
         }
 
@@ -119,25 +123,19 @@ public class AsteroidGame extends Application {
                     new BackgroundSize(1680, 900, false, false, false, false)
             );
             menuLayout.setBackground(new Background(backgroundImage));
-        } catch (Exception e) {
+        } catch (SpriteNotFoundException e) {
             logger.severe("Error setting menu background: " + e.getMessage());
         }
 
-        // Create the label with "AsteroidX"
         Label titleLabel = new Label("AsteroidX");
         titleLabel.setStyle("-fx-font-size: 48px; -fx-text-fill: #FFD700; -fx-font-weight: bold; -fx-effect: dropshadow(gaussian, black, 5, 0.5, 0, 0);");
-        // Style explanation:
-        // - #FFD700 is a gold/yellow color for high contrast.
-        // - dropshadow adds a subtle shadow to improve readability.
 
-        // Create buttons
         Button startButton = createStyledButton("Start", primaryStage);
         Button exitButton = createStyledButton("Exit", primaryStage);
 
         startButton.setOnAction(e -> startGame(primaryStage));
         exitButton.setOnAction(e -> primaryStage.close());
 
-        // Add label and buttons to the layout
         menuLayout.getChildren().addAll(titleLabel, startButton, exitButton);
         return menuLayout;
     }
@@ -179,12 +177,12 @@ public class AsteroidGame extends Application {
                 public void handle(long now) {
                     try {
                         updateGame();
-                    } catch (Exception e) {
+                    } catch (DrawingException e) {
                         logger.severe("Error in game loop: " + e.getMessage());
                     }
                 }
             };
-        } catch (Exception e) {
+        } catch (GameException e) {
             logger.severe("Error setting up game scene: " + e.getMessage());
         }
     }
@@ -221,7 +219,7 @@ public class AsteroidGame extends Application {
             primaryStage.setScene(gameScene);
             gameLoop.start();
             logger.info("Game started.");
-        } catch (Exception e) {
+        } catch (GameException e) {
             logger.severe("Error starting game: " + e.getMessage());
         }
     }
@@ -275,11 +273,10 @@ public class AsteroidGame extends Application {
             } else {
                 drawGameOver();
             }
-        } catch (Exception e) {
+        } catch (DrawingException e) {
             logger.severe("Error updating game state: " + e.getMessage());
         }
     }
-
 
     private void checkBossStage() {
         if (!gameEntityManager.isBossActive() && !bossDefeated &&
@@ -326,7 +323,7 @@ public class AsteroidGame extends Application {
                 public void run() {
                     try {
                         gameEntityManager.continuousSpawnAsteroids(gc);
-                    } catch (Exception e) {
+                    } catch (DrawingException e) {
                         logger.severe("Error spawning asteroids: " + e.getMessage());
                     }
                 }
@@ -337,12 +334,12 @@ public class AsteroidGame extends Application {
                 public void run() {
                     try {
                         gameEntityManager.continuousSpawnEnemyShips();
-                    } catch (Exception e) {
+                    } catch (GameException e) {
                         logger.severe("Error spawning enemy ships: " + e.getMessage());
                     }
                 }
             }, 0, 5000);
-        } catch (Exception e) {
+        } catch (GameException e) {
             logger.severe("Error setting up spawning: " + e.getMessage());
         }
     }
@@ -648,7 +645,7 @@ public class AsteroidGame extends Application {
                 canSummonDrone = true;
                 logger.info("Drone is ready to be summoned again.");
             }
-        } catch (Exception e) {
+        } catch (DrawingException e) {
             logger.severe("Error handling drone summon: " + e.getMessage());
         }
     }

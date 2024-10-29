@@ -1,6 +1,6 @@
 package se233.asterioddemo.exception;
 
-public class DrawingException extends Exception {
+public class DrawingException extends RuntimeException {
     public DrawingException(String message) {
         super(message);
     }

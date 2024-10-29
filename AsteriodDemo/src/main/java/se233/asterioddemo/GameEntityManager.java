@@ -2,6 +2,10 @@ package se233.asterioddemo;
 
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.media.AudioClip;
+import se233.asterioddemo.exception.DrawingException;
+import se233.asterioddemo.exception.GameException;
+import se233.asterioddemo.exception.SpriteNotFoundException;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -59,7 +63,7 @@ public class GameEntityManager {
                     iterator.remove();
                 }
             }
-        } catch (Exception e) {
+        } catch (DrawingException e) {
             logger.severe("Error updating enemy ship explosions: " + e.getMessage());
         }
     }
@@ -75,11 +79,10 @@ public class GameEntityManager {
                     explosionIter.remove();
                 }
             }
-        } catch (Exception e) {
+        } catch (DrawingException e) {
             logger.severe("Error updating explosions: " + e.getMessage());
         }
     }
-
 
     public void startBossStage(AudioClip bossMusic) {
         try {
@@ -95,7 +98,7 @@ public class GameEntityManager {
             } else {
                 logger.info("Boss is already active, skipping creation.");
             }
-        } catch (Exception e) {
+        } catch (GameException e) {
             logger.severe("Failed to start boss stage: " + e.getMessage());
         }
     }
@@ -111,7 +114,7 @@ public class GameEntityManager {
                     lastAsteroidSpawnTime = currentTime;
                 }
             }
-        } catch (Exception e) {
+        } catch (DrawingException e) {
             logger.severe("Error during continuous asteroid spawning: " + e.getMessage());
         }
     }
@@ -132,7 +135,7 @@ public class GameEntityManager {
             );
 
             asteroids.add(asteroid);
-        } catch (Exception e) {
+        } catch (SpriteNotFoundException e) {
             logger.severe("Error spawning single asteroid: " + e.getMessage());
         }
     }
@@ -175,11 +178,10 @@ public class GameEntityManager {
                     lastEnemySpawnTime = currentTime;
                 }
             }
-        } catch (Exception e) {
+        } catch (GameException e) {
             logger.severe("Error during continuous enemy ship spawning: " + e.getMessage());
         }
     }
-
 
     private void spawnEnemyShip() {
         try {
@@ -190,7 +192,7 @@ public class GameEntityManager {
             double angle = Math.PI / 2;
 
             enemyShips.add(new EnemyShip(x, y, speed, size, angle, spriteLoader));
-        } catch (Exception e) {
+        } catch (SpriteNotFoundException e) {
             logger.severe("Error spawning enemy ship: " + e.getMessage());
         }
     }
@@ -230,7 +232,7 @@ public class GameEntityManager {
                     bullet.draw(gc);
                 }
             }
-        } catch (Exception e) {
+        } catch (DrawingException e) {
             logger.severe("Error updating bullets: " + e.getMessage());
         }
     }
@@ -244,7 +246,7 @@ public class GameEntityManager {
                 asteroid.handleScreenEdges(gc.getCanvas().getWidth(), gc.getCanvas().getHeight());
                 asteroid.draw(gc);
             }
-        } catch (Exception e) {
+        } catch (DrawingException e) {
             logger.severe("Error updating asteroids: " + e.getMessage());
         }
     }
@@ -279,7 +281,7 @@ public class GameEntityManager {
                     enemy.draw(gc);
                 }
             }
-        } catch (Exception e) {
+        } catch (DrawingException e) {
             logger.severe("Error updating enemy ships: " + e.getMessage());
         }
     }
