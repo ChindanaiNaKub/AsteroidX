@@ -57,6 +57,11 @@ public class AsteroidGame extends Application {
     private SpriteLoader spriteLoader;
     private Scene menuScene, gameScene;
     private AnimationTimer gameLoop;
+    private long lastFrameTime = 0;
+    private static final long TARGET_FRAME_TIME = 16_666_667; // 60 FPS in nanoseconds
+    private int frameCount = 0;
+    private long lastFpsTime = 0;
+    private double currentFps = 0.0;
 
     private Drone drone; // To track the drone
     private boolean canSummonDrone = true; // Track if the drone can be summoned
@@ -176,7 +181,24 @@ public class AsteroidGame extends Application {
                 @Override
                 public void handle(long now) {
                     try {
-                        updateGame();
+                        // Frame rate control
+                        if (lastFrameTime == 0) {
+                            lastFrameTime = now;
+                        }
+                        
+                        long deltaTime = now - lastFrameTime;
+                        if (deltaTime >= TARGET_FRAME_TIME) {
+                            updateGame();
+                            lastFrameTime = now;
+                            
+                            // FPS calculation
+                            frameCount++;
+                            if (now - lastFpsTime >= 1_000_000_000) { // Every second
+                                currentFps = frameCount;
+                                frameCount = 0;
+                                lastFpsTime = now;
+                            }
+                        }
                     } catch (DrawingException e) {
                         logger.severe("Error in game loop: " + e.getMessage());
                     }
@@ -239,6 +261,9 @@ public class AsteroidGame extends Application {
                     handleDroneSummon();
                 }
 
+                // Frame-based spawning for better performance
+                gameEntityManager.updateSpawning();
+                
                 if (!gameEntityManager.isBossActive()) {
                     gameEntityManager.updateAndDrawBullets(gc, canvas.getWidth(), canvas.getHeight());
                     gameEntityManager.updateAndDrawEnemyShips(gc, playerShip.getX(), playerShip.getY());
@@ -262,6 +287,9 @@ public class AsteroidGame extends Application {
                 gameEntityManager.updateAndDrawExplosions(gc);
                 drawUI(gc, spriteLoader, gameState);
                 checkCollisions();
+                
+                // Draw FPS counter for performance monitoring
+                drawFpsCounter(gc);
 
                 if (gameState.isGameOver()) {
                     triggerGameOver();
@@ -315,33 +343,8 @@ public class AsteroidGame extends Application {
     }
 
     private void startAsteroidAndEnemySpawning() {
-        try {
-            Timer spawnTimer = new Timer(true);
-
-            spawnTimer.scheduleAtFixedRate(new TimerTask() {
-                @Override
-                public void run() {
-                    try {
-                        gameEntityManager.continuousSpawnAsteroids(gc);
-                    } catch (DrawingException e) {
-                        logger.severe("Error spawning asteroids: " + e.getMessage());
-                    }
-                }
-            }, 0, 4000);
-
-            spawnTimer.scheduleAtFixedRate(new TimerTask() {
-                @Override
-                public void run() {
-                    try {
-                        gameEntityManager.continuousSpawnEnemyShips();
-                    } catch (GameException e) {
-                        logger.severe("Error spawning enemy ships: " + e.getMessage());
-                    }
-                }
-            }, 0, 5000);
-        } catch (GameException e) {
-            logger.severe("Error setting up spawning: " + e.getMessage());
-        }
+        // Removed timer-based spawning - now handled in updateGame() for better performance
+        logger.info("Frame-based spawning enabled for better performance");
     }
 
     private void fireBullet(InputController inputController) {
@@ -365,49 +368,29 @@ public class AsteroidGame extends Application {
 
     private void clearScreen() {
         if (gameEntityManager.isBossActive()) {
-            // Calculate background movement
+            // Simplified background rendering for better performance
             elapsedTime += 0.016; // Assuming 60 FPS, adjust if different
-
-            // Create a sine wave movement pattern
-            backgroundX = Math.sin(elapsedTime) * 50; // Horizontal movement
-            backgroundY = Math.cos(elapsedTime) * 30; // Vertical movement
-
-            // Draw the background with offset
-            // Draw it multiple times to cover screen during movement
-            for (int x = -1; x <= 1; x++) {
-                for (int y = -1; y <= 1; y++) {
-                    gc.drawImage(
-                            backgroundImageBoss,
-                            backgroundX + x * canvas.getWidth(),
-                            backgroundY + y * canvas.getHeight(),
-                            canvas.getWidth(),
-                            canvas.getHeight()
-                    );
-                }
-            }
+            
+            // Simple parallax effect instead of complex sine wave
+            backgroundX = (elapsedTime * 20) % canvas.getWidth();
+            
+            // Draw background twice for seamless scrolling
+            gc.drawImage(backgroundImageBoss, -backgroundX, 0, canvas.getWidth(), canvas.getHeight());
+            gc.drawImage(backgroundImageBoss, canvas.getWidth() - backgroundX, 0, canvas.getWidth(), canvas.getHeight());
         } else {
             gc.drawImage(backgroundImage, 0, 0, canvas.getWidth(), canvas.getHeight());
         }
 
-        // Draw grid overlay
-        drawGrid();
+        // Removed grid drawing for better performance
     }
 
-    private void drawGrid() {
-        gc.setStroke(Color.rgb(255, 255, 255, 0.1)); // White with 10% opacity
-        gc.setLineWidth(0.5);
-
-        // Draw vertical lines
-        double gridSize = 50; // Adjust this value to change grid size
-        for (double x = 0; x <= canvas.getWidth(); x += gridSize) {
-            gc.strokeLine(x, 0, x, canvas.getHeight());
-        }
-
-        // Draw horizontal lines
-        for (double y = 0; y <= canvas.getHeight(); y += gridSize) {
-            gc.strokeLine(0, y, canvas.getWidth(), y);
-        }
+    private void drawFpsCounter(GraphicsContext gc) {
+        gc.setFill(Color.WHITE);
+        gc.setFont(Font.font("Arial", 12));
+        gc.fillText(String.format("FPS: %.1f", currentFps), 10, 20);
     }
+
+    // Grid drawing removed for better performance
 
     private void updatePlayerShip() {
         if (inputController.isLeftPressed()) {

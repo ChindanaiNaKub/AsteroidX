@@ -31,6 +31,11 @@ public class GameEntityManager {
     private static final long ASTEROID_SPAWN_COOLDOWN = 1000;
     private static final long ENEMY_SPAWN_COOLDOWN = 5000;
     private static final int ASTEROIDS_PER_SPAWN = 3;
+    
+    // Frame-based spawning counters
+    private int frameCounter = 0;
+    private static final int ASTEROID_SPAWN_FRAMES = 240; // 4 seconds at 60 FPS
+    private static final int ENEMY_SPAWN_FRAMES = 300; // 5 seconds at 60 FPS
 
     private static final double SMALL_ASTEROID_SIZE = 20;
     private static final double MEDIUM_ASTEROID_SIZE = 40;
@@ -39,6 +44,9 @@ public class GameEntityManager {
     private final SpriteLoader spriteLoader;
 
     private List<ShipExplosionEffect> shipExplosions = new ArrayList<>();
+
+    // Performance optimization flags
+    private static final boolean ENABLE_OBJECT_POOLING = false; // Disabled for now
 
 
     public GameEntityManager(SpriteLoader spriteLoader) {
@@ -103,6 +111,24 @@ public class GameEntityManager {
         }
     }
 
+    public void updateSpawning() {
+        if (!bossActive) {
+            frameCounter++;
+            
+            // Spawn asteroids every ASTEROID_SPAWN_FRAMES frames
+            if (frameCounter % ASTEROID_SPAWN_FRAMES == 0) {
+                for (int i = 0; i < ASTEROIDS_PER_SPAWN; i++) {
+                    spawnSingleAsteroid(null); // gc not needed for spawning
+                }
+            }
+            
+            // Spawn enemy ships every ENEMY_SPAWN_FRAMES frames
+            if (frameCounter % ENEMY_SPAWN_FRAMES == 0) {
+                spawnEnemyShip();
+            }
+        }
+    }
+
     public void continuousSpawnAsteroids(GraphicsContext gc) {
         try {
             if (!bossActive) {
@@ -123,10 +149,14 @@ public class GameEntityManager {
         try {
             double speed = 1.0 + random.nextDouble() * 2.0;
             AsteroidSize size = getRandomAsteroidSize();
+            
+            // Use fixed screen dimensions if gc is null (for frame-based spawning)
+            int screenWidth = (gc != null) ? (int) gc.getCanvas().getWidth() : 1280;
+            int screenHeight = (gc != null) ? (int) gc.getCanvas().getHeight() : 720;
 
             Asteroid asteroid = new Asteroid(
-                    random.nextInt((int) gc.getCanvas().getWidth()),
-                    random.nextInt((int) gc.getCanvas().getHeight()),
+                    random.nextInt(screenWidth),
+                    random.nextInt(screenHeight),
                     speed,
                     size.size,
                     size.points,

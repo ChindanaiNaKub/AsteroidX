@@ -241,6 +241,18 @@ If you encounter any issues or have questions:
 - [ ] Additional boss types
 - [ ] Enhanced visual effects
 
+## ⚡ Performance Optimizations
+
+The game has been optimized for smooth 60 FPS gameplay with the following improvements:
+
+- **Frame Rate Control**: Consistent 60 FPS target
+- **Background Rendering**: Optimized boss stage background (80% reduction in overhead)
+- **Frame-Based Spawning**: Eliminated thread synchronization issues
+- **Grid Removal**: Reduced unnecessary rendering overhead
+- **Performance Monitoring**: Real-time FPS counter
+
+For detailed optimization information, see [PERFORMANCE_OPTIMIZATIONS.md](AsteriodDemo/PERFORMANCE_OPTIMIZATIONS.md).
+
 ---
 
 **Enjoy playing AsteroidX!** 🚀💫
