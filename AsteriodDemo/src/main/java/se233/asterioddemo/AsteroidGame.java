@@ -27,6 +27,10 @@ public class AsteroidGame extends Application {
 
     private Canvas canvas;
     private GraphicsContext gc;
+    private double cameraShakeX = 0;
+    private double cameraShakeY = 0;
+    private double cameraShakeIntensity = 0;
+    private long cameraShakeEndTime = 0;
 
     private GameState gameState;
     private InputController inputController;
@@ -76,7 +80,7 @@ public class AsteroidGame extends Application {
             "numeral6.png", "numeral7.png", "numeral8.png", "numeral9.png"
     };
 
-    private static final int BOSS_TRIGGER_SCORE = 17;
+    private static final int BOSS_TRIGGER_SCORE = 100; // increase base; we'll ramp to trigger once per threshold without modulo spikes
 
     private ShipAI shipAI;
     private boolean aiMode = false;
@@ -258,6 +262,7 @@ public class AsteroidGame extends Application {
 
     private void updateGame() {
         try {
+            updateCameraShake();
             clearScreen();
 
             if (!gameOver) {
@@ -297,6 +302,11 @@ public class AsteroidGame extends Application {
                 gameEntityManager.updateAndDrawExplosions(gc);
                 drawUI(gc, spriteLoader, gameState);
                 checkCollisions();
+
+                // Trigger camera shake if player took damage this frame
+                if (playerShip.consumeDamageEvent()) {
+                    triggerCameraShake(6, 200); // px, ms
+                }
                 
                 // Draw FPS counter for performance monitoring
                 drawFpsCounter(gc);
@@ -316,13 +326,35 @@ public class AsteroidGame extends Application {
         }
     }
 
+    private void updateCameraShake() {
+        long now = System.currentTimeMillis();
+        if (now < cameraShakeEndTime) {
+            double progress = 1.0 - ((double)(cameraShakeEndTime - now) / Math.max(1, (cameraShakeEndTime - (cameraShakeEndTime - 1))));
+            double decay = Math.max(0, 1.0 - progress);
+            cameraShakeX = (Math.random() - 0.5) * cameraShakeIntensity * decay;
+            cameraShakeY = (Math.random() - 0.5) * cameraShakeIntensity * decay;
+        } else {
+            cameraShakeX = 0;
+            cameraShakeY = 0;
+            cameraShakeIntensity = 0;
+        }
+    }
+
+    private void triggerCameraShake(double intensity, long durationMs) {
+        cameraShakeIntensity = intensity;
+        cameraShakeEndTime = System.currentTimeMillis() + durationMs;
+    }
+
     private void checkBossStage() {
-        if (!gameEntityManager.isBossActive() && !bossDefeated &&
-                gameState.getScore() >= BOSS_TRIGGER_SCORE &&
-                gameState.getScore() % BOSS_TRIGGER_SCORE == 0) {
-            gameEntityManager.startBossStage(bossMusic);
-            bossStageMusic.play(); // Play the boss stage background music when the boss appears
-            logger.info("Boss stage started, playing boss stage music.");
+        if (!gameEntityManager.isBossActive() && !bossDefeated) {
+            // Use a soft gate: trigger once when passing threshold, then require next multiple
+            int score = gameState.getScore();
+            if (score >= BOSS_TRIGGER_SCORE && (score / BOSS_TRIGGER_SCORE) >= gameState.getLevel()) {
+                gameEntityManager.startBossStage(bossMusic);
+                bossStageMusic.play();
+                logger.info("Boss stage started, playing boss stage music.");
+                gameState.nextLevel();
+            }
         }
     }
 
@@ -377,6 +409,8 @@ public class AsteroidGame extends Application {
     }
 
     private void clearScreen() {
+        gc.save();
+        gc.translate(cameraShakeX, cameraShakeY);
         if (gameEntityManager.isBossActive()) {
             // Simplified background rendering for better performance
             elapsedTime += lastDeltaSeconds; // use real delta time
@@ -392,6 +426,7 @@ public class AsteroidGame extends Application {
         }
 
         // Removed grid drawing for better performance
+        gc.restore();
     }
 
     private void drawFpsCounter(GraphicsContext gc) {

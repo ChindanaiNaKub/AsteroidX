@@ -33,6 +33,12 @@ public class PlayerShip extends Character {
     private final long SHIELD_DURATION = 3000; // Shield lasts for 3 seconds
     private AnimatedSprite shipSprite;
 
+    // Invincibility frames after being hit
+    private boolean isInvincible = false;
+    private long invincibleUntilMs = 0;
+    private static final long INVINCIBILITY_DURATION_MS = 700; // milliseconds
+    private boolean tookDamageEvent = false; // consumed by outer game to trigger camera shake
+
     public PlayerShip(double x, double y, double speed, double size, SpriteLoader spriteLoader) {
         super(x, y, speed, size);
         this.angle = 0;
@@ -114,6 +120,13 @@ public class PlayerShip extends Character {
         long currentTime = System.currentTimeMillis();
         if (isShieldActive && currentTime - shieldActivationTime >= SHIELD_DURATION) {
             deactivateShield();
+        }
+    }
+
+    public void updateInvincibility() {
+        long now = System.currentTimeMillis();
+        if (isInvincible && now >= invincibleUntilMs) {
+            isInvincible = false;
         }
     }
 
@@ -251,8 +264,21 @@ public class PlayerShip extends Character {
     }
 
     public void reduceHealth(int amount) {
+        // Ignore damage if shielded or within invincibility window
+        long now = System.currentTimeMillis();
+        if (isShieldActive || (isInvincible && now < invincibleUntilMs)) {
+            return;
+        }
+
         this.health -= amount;
         if (this.health < 0) this.health = 0;
+
+        // Trigger hit feedback and start i-frames
+        isHit = true;
+        hitAnimationStart = now;
+        isInvincible = true;
+        invincibleUntilMs = now + INVINCIBILITY_DURATION_MS;
+        tookDamageEvent = true;
     }
 
     public void reset(double startX, double startY, double startSpeed) {
@@ -380,6 +406,12 @@ public class PlayerShip extends Character {
 
     public void setAngle(double angle) {
         this.angle = angle;
+    }
+
+    public boolean consumeDamageEvent() {
+        boolean had = tookDamageEvent;
+        tookDamageEvent = false;
+        return had;
     }
 
 }

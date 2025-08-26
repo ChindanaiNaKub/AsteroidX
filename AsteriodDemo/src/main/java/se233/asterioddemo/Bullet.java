@@ -56,6 +56,10 @@ public class Bullet implements GameObject {
         return damage;
     }
 
+    public String getMode() {
+        return bulletMode;
+    }
+
     // Basic movement method
     public void move() {
         x += Math.cos(angle) * speed;

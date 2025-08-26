@@ -29,9 +29,9 @@ public class GameEntityManager {
     private long lastAsteroidSpawnTime = 0;
     private long lastEnemySpawnTime = 0;
     private static final long BULLET_COOLDOWN = 300;
-    private static final long ASTEROID_SPAWN_COOLDOWN = 1000; // ms
-    private static final long ENEMY_SPAWN_COOLDOWN = 5000; // ms
-    private static final int ASTEROIDS_PER_SPAWN = 3;
+    private static final long BASE_ASTEROID_SPAWN_COOLDOWN = 1000; // ms base, scales with difficulty
+    private static final long BASE_ENEMY_SPAWN_COOLDOWN = 5000; // ms base, scales with difficulty
+    private static final int BASE_ASTEROIDS_PER_SPAWN = 2;
     
     // Time-based spawning accumulators (ms)
     private long spawnAccumulatorMsAsteroid = 0;
@@ -117,16 +117,25 @@ public class GameEntityManager {
             spawnAccumulatorMsAsteroid += deltaMs;
             spawnAccumulatorMsEnemy += deltaMs;
 
-            while (spawnAccumulatorMsAsteroid >= ASTEROID_SPAWN_COOLDOWN) {
-                for (int i = 0; i < ASTEROIDS_PER_SPAWN; i++) {
+            // Smooth difficulty ramp based on score
+            int score = AsteroidGame.logger != null ? 0 : 0; // placeholder to keep reference silent
+            // We'll compute difficulty factor from total entities to keep self-contained if GameState not accessible here
+            double difficultyFactor = 1.0 + Math.min(2.0, (asteroids.size() + enemyShips.size()) / 20.0);
+
+            long asteroidCooldown = (long) (BASE_ASTEROID_SPAWN_COOLDOWN / difficultyFactor);
+            long enemyCooldown = (long) Math.max(1800, BASE_ENEMY_SPAWN_COOLDOWN / Math.max(1.0, (difficultyFactor * 0.6)));
+            int asteroidsPerSpawn = Math.min(4, (int) Math.round(BASE_ASTEROIDS_PER_SPAWN * difficultyFactor));
+
+            while (spawnAccumulatorMsAsteroid >= asteroidCooldown) {
+                for (int i = 0; i < asteroidsPerSpawn; i++) {
                     spawnSingleAsteroid(null);
                 }
-                spawnAccumulatorMsAsteroid -= ASTEROID_SPAWN_COOLDOWN;
+                spawnAccumulatorMsAsteroid -= asteroidCooldown;
             }
 
-            while (spawnAccumulatorMsEnemy >= ENEMY_SPAWN_COOLDOWN) {
+            while (spawnAccumulatorMsEnemy >= enemyCooldown) {
                 spawnEnemyShip();
-                spawnAccumulatorMsEnemy -= ENEMY_SPAWN_COOLDOWN;
+                spawnAccumulatorMsEnemy -= enemyCooldown;
             }
         }
     }
@@ -135,8 +144,8 @@ public class GameEntityManager {
         try {
             if (!bossActive) {
                 long currentTime = System.currentTimeMillis();
-                if (currentTime - lastAsteroidSpawnTime >= ASTEROID_SPAWN_COOLDOWN) {
-                    for (int i = 0; i < ASTEROIDS_PER_SPAWN; i++) {
+                if (currentTime - lastAsteroidSpawnTime >= BASE_ASTEROID_SPAWN_COOLDOWN) {
+                    for (int i = 0; i < BASE_ASTEROIDS_PER_SPAWN; i++) {
                         spawnSingleAsteroid(gc);
                     }
                     lastAsteroidSpawnTime = currentTime;
@@ -205,7 +214,7 @@ public class GameEntityManager {
         try {
             if (!bossActive) {
                 long currentTime = System.currentTimeMillis();
-                if (currentTime - lastEnemySpawnTime >= ENEMY_SPAWN_COOLDOWN) {
+                if (currentTime - lastEnemySpawnTime >= BASE_ENEMY_SPAWN_COOLDOWN) {
                     spawnEnemyShip();
                     lastEnemySpawnTime = currentTime;
                 }
@@ -386,8 +395,8 @@ public class GameEntityManager {
                 EnemyShip enemy = enemyIterator.next();
 
                 if (isColliding(bullet, enemy)) {
-                    // Deal damage to enemy
-                    enemy.takeDamage(10);
+                    // Deal damage to enemy based on bullet's damage
+                    enemy.takeDamage(bullet.getDamage());
 
                     // Remove the bullet that hit
                     bulletIterator.remove();
@@ -410,6 +419,13 @@ public class GameEntityManager {
                                 "standard"
                         );
                         shipExplosions.add(explosion);
+                    } else {
+                        // Small hit spark for feedback
+                        ExplosionEffect spark = new ExplosionEffect(6);
+                        ExplosionEffect.ExplosionConfig cfg = spark.getConfig();
+                        cfg.setSparkColors(javafx.scene.paint.Color.CYAN, javafx.scene.paint.Color.WHITE);
+                        spark.createExplosion(enemy.getX(), enemy.getY(), 8);
+                        explosions.add(spark);
                     }
                 }
             }
