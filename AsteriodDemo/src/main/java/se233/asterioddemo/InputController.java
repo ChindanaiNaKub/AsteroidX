@@ -79,6 +79,7 @@ public class InputController {
         scene.setOnMousePressed(event -> shooting = true);
         scene.setOnMouseReleased(event -> shooting = false);
         scene.setOnMouseMoved(this::handleMouseMoved);
+        scene.setOnMouseDragged(this::handleMouseMoved);
     }
 
     private void handleMouseMoved(MouseEvent event) {
