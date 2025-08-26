@@ -167,11 +167,11 @@ public class AsteroidGame extends Application {
             gameEntityManager = new GameEntityManager(spriteLoader);
             playerShip = new PlayerShip(640, 360, 5, 30, spriteLoader);
 
-            laserSound = new AudioClip(getClass().getResource("/sounds/laser.m4a").toExternalForm());
-            hitSound = new AudioClip(getClass().getResource("/sounds/hit.m4a").toExternalForm());
-            explodeSound = new AudioClip(getClass().getResource("/sounds/explode.m4a").toExternalForm());
-            thrustSound = new AudioClip(getClass().getResource("/sounds/thrust.m4a").toExternalForm());
-            bossMusic = new AudioClip(getClass().getResource("/sounds/boss.mp3").toExternalForm());
+            laserSound = new AudioClip(getClass().getResource("/sounds/laser.wav").toExternalForm());
+            hitSound = new AudioClip(getClass().getResource("/sounds/hit.wav").toExternalForm());
+            explodeSound = new AudioClip(getClass().getResource("/sounds/explode.wav").toExternalForm());
+            thrustSound = new AudioClip(getClass().getResource("/sounds/thrust.wav").toExternalForm());
+            bossMusic = new AudioClip(getClass().getResource("/sounds/boss.wav").toExternalForm());
             bossStageMusic = new AudioClip(getClass().getResource("/sounds/FEIN.wav").toExternalForm());
 
             setSoundVolumes();
