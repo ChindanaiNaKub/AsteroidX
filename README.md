@@ -70,6 +70,43 @@ brew install openjdk@21 maven git
    mvn javafx:run
    ```
 
+## ⬇️ Prebuilt Releases
+
+You can download ready-to-run builds for Windows, macOS, and Linux from the repository's Releases tab.
+
+### Windows
+- Download `AsteroidX-Windows.zip`
+- Extract the ZIP
+- Run `AsteroidX/AsteroidX.exe`
+
+### macOS
+- Download `AsteroidX-macOS.zip`
+- Unzip and move `AsteroidX.app` to `Applications`
+- On first run, right-click the app and choose Open (app is unsigned)
+
+### Linux
+- Download `AsteroidX-linux.tar.gz`
+- Extract: `tar -xzf AsteroidX-linux.tar.gz`
+- Run: `./AsteroidX/bin/AsteroidX`
+
+### Alternative: Fat JAR (requires Java 21+)
+- Download `AsteriodDemo-1.0-SNAPSHOT-jar-with-dependencies.jar`
+- Run: `java -jar AsteriodDemo-1.0-SNAPSHOT-jar-with-dependencies.jar`
+
+## 📦 Create a New Release (CI builds for you)
+
+Push a tag starting with `v` to trigger the CI release build for all platforms:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+The GitHub Actions workflow will:
+- Build the project with Maven
+- Package platform-specific app images via `jpackage`
+- Upload Windows/macOS/Linux archives and the fat JAR to the release
+
 ### Alternative: Create Executable JAR
 
 To create a standalone executable JAR file:
