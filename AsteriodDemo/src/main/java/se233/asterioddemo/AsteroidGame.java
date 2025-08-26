@@ -19,8 +19,6 @@ import se233.asterioddemo.exception.SpriteNotFoundException;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.logging.Logger;
 import java.util.logging.LogManager;
 
@@ -58,10 +56,14 @@ public class AsteroidGame extends Application {
     private Scene menuScene, gameScene;
     private AnimationTimer gameLoop;
     private long lastFrameTime = 0;
-    private static final long TARGET_FRAME_TIME = 16_666_667; // 60 FPS in nanoseconds
     private int frameCount = 0;
     private long lastFpsTime = 0;
     private double currentFps = 0.0;
+    private double lastDeltaSeconds = 0.0;
+    // Cached fonts to reduce per-frame allocation churn
+    private Font fpsFont;
+    private Font uiFont20;
+    private Font uiFont15;
 
     private Drone drone; // To track the drone
     private boolean canSummonDrone = true; // Track if the drone can be summoned
@@ -80,7 +82,6 @@ public class AsteroidGame extends Application {
     private boolean aiMode = false;
 
     private double backgroundX = 0;
-    private double backgroundY = 0;
     private double backgroundSpeed = 1.2; // Faster parallax for energetic feel
     private double elapsedTime = 0;
 
@@ -167,6 +168,11 @@ public class AsteroidGame extends Application {
             gameEntityManager = new GameEntityManager(spriteLoader);
             playerShip = new PlayerShip(640, 360, 5, 30, spriteLoader);
 
+            // Cache fonts to avoid per-frame allocations
+            fpsFont = Font.font("Arial", 12);
+            uiFont20 = new Font(20);
+            uiFont15 = new Font(15);
+
             laserSound = new AudioClip(getClass().getResource("/sounds/laser.wav").toExternalForm());
             hitSound = new AudioClip(getClass().getResource("/sounds/hit.wav").toExternalForm());
             explodeSound = new AudioClip(getClass().getResource("/sounds/explode.wav").toExternalForm());
@@ -182,23 +188,26 @@ public class AsteroidGame extends Application {
                 @Override
                 public void handle(long now) {
                     try {
-                        // Frame rate control
                         if (lastFrameTime == 0) {
                             lastFrameTime = now;
+                            lastFpsTime = now;
+                            return;
                         }
-                        
-                        long deltaTime = now - lastFrameTime;
-                        if (deltaTime >= TARGET_FRAME_TIME) {
-                            updateGame();
-                            lastFrameTime = now;
-                            
-                            // FPS calculation
-                            frameCount++;
-                            if (now - lastFpsTime >= 1_000_000_000) { // Every second
-                                currentFps = frameCount;
-                                frameCount = 0;
-                                lastFpsTime = now;
-                            }
+
+                        long deltaNanos = now - lastFrameTime;
+                        lastDeltaSeconds = deltaNanos / 1_000_000_000.0;
+                        lastFrameTime = now;
+
+                        updateGame();
+
+                        // FPS calculation (count pulses)
+                        frameCount++;
+                        long fpsWindow = now - lastFpsTime;
+                        if (fpsWindow >= 1_000_000_000) { // Every second
+                            // Compute average FPS over the window
+                            currentFps = (double) frameCount * 1_000_000_000.0 / fpsWindow;
+                            frameCount = 0;
+                            lastFpsTime = now;
                         }
                     } catch (DrawingException e) {
                         logger.severe("Error in game loop: " + e.getMessage());
@@ -262,8 +271,8 @@ public class AsteroidGame extends Application {
                     handleDroneSummon();
                 }
 
-                // Frame-based spawning for better performance
-                gameEntityManager.updateSpawning();
+                // Time-based spawning for consistent behavior across FPS
+                gameEntityManager.updateSpawning(lastDeltaSeconds);
                 
                 if (!gameEntityManager.isBossActive()) {
                     gameEntityManager.updateAndDrawBullets(gc, canvas.getWidth(), canvas.getHeight());
@@ -370,7 +379,7 @@ public class AsteroidGame extends Application {
     private void clearScreen() {
         if (gameEntityManager.isBossActive()) {
             // Simplified background rendering for better performance
-            elapsedTime += 0.016; // Assuming 60 FPS, adjust if different
+            elapsedTime += lastDeltaSeconds; // use real delta time
             
             // Simple parallax effect instead of complex sine wave
             backgroundX = (elapsedTime * 20 * backgroundSpeed) % canvas.getWidth();
@@ -387,7 +396,7 @@ public class AsteroidGame extends Application {
 
     private void drawFpsCounter(GraphicsContext gc) {
         gc.setFill(Color.WHITE);
-        gc.setFont(Font.font("Arial", 12));
+        gc.setFont(fpsFont);
         gc.fillText(String.format("FPS: %.1f", currentFps), 10, 20);
     }
 
@@ -457,7 +466,7 @@ public class AsteroidGame extends Application {
 
     private void drawUI(GraphicsContext gc, SpriteLoader spriteLoader, GameState gameState) {
         gc.setFill(Color.WHITE);
-        gc.setFont(new Font(20));
+        gc.setFont(uiFont20);
 
         gc.drawImage(spriteLoader.getSprite("playerLife1_blue.png"), 20, 20);
         drawNumber(gc, gameState.getLives(), 60, 20, spriteLoader);
@@ -501,7 +510,7 @@ public class AsteroidGame extends Application {
         gc.fillRect(playerHealthX, playerHealthY, playerHealthWidth * (playerShip.getHealth() / 100.0), playerHealthHeight);
 
         gc.setFill(Color.WHITE);
-        gc.setFont(new Font(15));
+        gc.setFont(uiFont15);
         gc.fillText("PLAYER HP: " + playerShip.getHealth() + "/100", playerHealthX + 50, playerHealthY + 12);
 
         if (gameEntityManager.getBoss() != null) {
@@ -515,7 +524,7 @@ public class AsteroidGame extends Application {
             gc.setFill(Color.RED);
             gc.fillRect(bossHealthX, 10, bossHealthWidth * (gameEntityManager.getBoss().getHealth() / 200.0), bossHealthHeight);
             gc.setFill(Color.WHITE);
-            gc.setFont(new Font(15));
+            gc.setFont(uiFont15);
             gc.fillText("BOSS HP: " + gameEntityManager.getBoss().getHealth() + "/200", bossHealthX + bossHealthWidth / 2 - 50, 45);
         }
     }

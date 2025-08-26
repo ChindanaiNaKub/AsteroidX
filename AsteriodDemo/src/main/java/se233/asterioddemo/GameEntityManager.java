@@ -24,18 +24,18 @@ public class GameEntityManager {
     private boolean bossActive;
     private Random random;
 
+    // Bullet cooldown currently unused (enemy ships use their own timers)
     private long lastBulletTime = 0;
     private long lastAsteroidSpawnTime = 0;
     private long lastEnemySpawnTime = 0;
     private static final long BULLET_COOLDOWN = 300;
-    private static final long ASTEROID_SPAWN_COOLDOWN = 1000;
-    private static final long ENEMY_SPAWN_COOLDOWN = 5000;
+    private static final long ASTEROID_SPAWN_COOLDOWN = 1000; // ms
+    private static final long ENEMY_SPAWN_COOLDOWN = 5000; // ms
     private static final int ASTEROIDS_PER_SPAWN = 3;
     
-    // Frame-based spawning counters
-    private int frameCounter = 0;
-    private static final int ASTEROID_SPAWN_FRAMES = 120; // 2 seconds at 60 FPS
-    private static final int ENEMY_SPAWN_FRAMES = 180; // 3 seconds at 60 FPS
+    // Time-based spawning accumulators (ms)
+    private long spawnAccumulatorMsAsteroid = 0;
+    private long spawnAccumulatorMsEnemy = 0;
 
     private static final double SMALL_ASTEROID_SIZE = 20;
     private static final double MEDIUM_ASTEROID_SIZE = 40;
@@ -46,7 +46,7 @@ public class GameEntityManager {
     private List<ShipExplosionEffect> shipExplosions = new ArrayList<>();
 
     // Performance optimization flags
-    private static final boolean ENABLE_OBJECT_POOLING = false; // Disabled for now
+    private static final boolean ENABLE_OBJECT_POOLING = false; // Placeholder for future optimization
 
 
     public GameEntityManager(SpriteLoader spriteLoader) {
@@ -111,20 +111,22 @@ public class GameEntityManager {
         }
     }
 
-    public void updateSpawning() {
+    public void updateSpawning(double deltaSeconds) {
         if (!bossActive) {
-            frameCounter++;
-            
-            // Spawn asteroids every ASTEROID_SPAWN_FRAMES frames
-            if (frameCounter % ASTEROID_SPAWN_FRAMES == 0) {
+            long deltaMs = (long) (deltaSeconds * 1000.0);
+            spawnAccumulatorMsAsteroid += deltaMs;
+            spawnAccumulatorMsEnemy += deltaMs;
+
+            while (spawnAccumulatorMsAsteroid >= ASTEROID_SPAWN_COOLDOWN) {
                 for (int i = 0; i < ASTEROIDS_PER_SPAWN; i++) {
-                    spawnSingleAsteroid(null); // gc not needed for spawning
+                    spawnSingleAsteroid(null);
                 }
+                spawnAccumulatorMsAsteroid -= ASTEROID_SPAWN_COOLDOWN;
             }
-            
-            // Spawn enemy ships every ENEMY_SPAWN_FRAMES frames
-            if (frameCounter % ENEMY_SPAWN_FRAMES == 0) {
+
+            while (spawnAccumulatorMsEnemy >= ENEMY_SPAWN_COOLDOWN) {
                 spawnEnemyShip();
+                spawnAccumulatorMsEnemy -= ENEMY_SPAWN_COOLDOWN;
             }
         }
     }
@@ -431,7 +433,7 @@ public class GameEntityManager {
 
                     // Update score
                     gameState.addScore(asteroid.getPoints());
-                    logger.info("Asteroid destroyed! Score: " + gameState.getScore());
+                    logger.fine("Asteroid destroyed! Score: " + gameState.getScore());
 
                     // Create explosion effect
                     ExplosionEffect explosion = new ExplosionEffect(asteroid.getSize());
@@ -624,7 +626,7 @@ public class GameEntityManager {
         gameState.addScore(2); // Example score for defeating an enemy ship.
 
         // Log the defeat of the enemy
-        logger.info("Enemy ship defeated! "+ gameState.getScore());
+        logger.fine("Enemy ship defeated! " + gameState.getScore());
 
         // Create an explosion effect at the enemy's location
         ShipExplosionEffect explosion = new ShipExplosionEffect(20);
