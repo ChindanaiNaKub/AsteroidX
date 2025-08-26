@@ -81,7 +81,7 @@ public class AsteroidGame extends Application {
 
     private double backgroundX = 0;
     private double backgroundY = 0;
-    private double backgroundSpeed = 0.5; // Adjust speed as needed
+    private double backgroundSpeed = 1.2; // Faster parallax for energetic feel
     private double elapsedTime = 0;
 
     public static void main(String[] args) {
@@ -175,6 +175,7 @@ public class AsteroidGame extends Application {
             bossStageMusic = new AudioClip(getClass().getResource("/sounds/FEIN.wav").toExternalForm());
 
             setSoundVolumes();
+            laserSound.setRate(1.2);
             startAsteroidAndEnemySpawning();
 
             gameLoop = new AnimationTimer() {
@@ -372,7 +373,7 @@ public class AsteroidGame extends Application {
             elapsedTime += 0.016; // Assuming 60 FPS, adjust if different
             
             // Simple parallax effect instead of complex sine wave
-            backgroundX = (elapsedTime * 20) % canvas.getWidth();
+            backgroundX = (elapsedTime * 20 * backgroundSpeed) % canvas.getWidth();
             
             // Draw background twice for seamless scrolling
             gc.drawImage(backgroundImageBoss, -backgroundX, 0, canvas.getWidth(), canvas.getHeight());

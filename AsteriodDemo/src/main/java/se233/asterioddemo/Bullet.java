@@ -10,7 +10,7 @@ import java.util.logging.Logger;
 public class Bullet implements GameObject {
     private double x, y;
     private double angle;
-    private double speed = 3;
+    private double speed = 9;
     private Image bulletImage;
     private double size = 10.0;
     private SpriteLoader spriteLoader;

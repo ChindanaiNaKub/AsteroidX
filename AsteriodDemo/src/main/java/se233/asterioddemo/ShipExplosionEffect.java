@@ -2,9 +2,6 @@ package se233.asterioddemo;
 
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.LinearGradient;
-import javafx.scene.paint.Stop;
-import javafx.scene.paint.CycleMethod;
 import javafx.scene.effect.BlendMode;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -12,6 +9,13 @@ import java.util.List;
 import java.util.Random;
 
 public class ShipExplosionEffect {
+    // Caps to prevent excessive particle counts on large explosions
+    private static final int MAX_SHIP_DEBRIS = 28;
+    private static final int MAX_ENERGY_SPARKS = 36;
+    private static final int MAX_PLASMA_CLOUDS = 24;
+    private static final int MAX_ELECTRIC_ARCS = 12;
+    // Margin for culling off-screen particles during drawing
+    private static final double OFFSCREEN_MARGIN = 16.0;
     public enum ParticleType {
         SHIP_DEBRIS, ENERGY_SPARK, PLASMA_CLOUD, CORE_BURST, ELECTRIC_ARC
     }
@@ -68,11 +72,12 @@ public class ShipExplosionEffect {
             };
 
             this.maxLife = switch (type) {
-                case SHIP_DEBRIS -> 25 + config.random.nextDouble() * 25;
-                case ENERGY_SPARK -> 15 + config.random.nextDouble() * 20;
-                case PLASMA_CLOUD -> 35 + config.random.nextDouble() * 25;
-                case CORE_BURST -> 10 + config.random.nextDouble() * 15;
-                case ELECTRIC_ARC -> 5 + config.random.nextDouble() * 10;
+                // Shorter lifetimes to reduce total per-frame workload
+                case SHIP_DEBRIS -> 12 + config.random.nextDouble() * 8;
+                case ENERGY_SPARK -> 6 + config.random.nextDouble() * 6;
+                case PLASMA_CLOUD -> 18 + config.random.nextDouble() * 10;
+                case CORE_BURST -> 6 + config.random.nextDouble() * 6;
+                case ELECTRIC_ARC -> 6 + config.random.nextDouble() * 4;
             };
 
             this.life = maxLife;
@@ -91,7 +96,7 @@ public class ShipExplosionEffect {
 
         private void initializeArcPoints(ShipExplosionConfig config) {
             arcPoints = new ArrayList<>();
-            int segments = 5 + config.random.nextInt(4);
+            int segments = 3 + config.random.nextInt(3); // fewer segments for performance
             double segmentLength = size / segments;
             double currentX = 0;
             double currentY = 0;
@@ -159,24 +164,9 @@ public class ShipExplosionEffect {
         }
 
         private void drawShipDebris(GraphicsContext gc) {
-            // Draw metallic-looking debris
-            int sides = 5 + new Random().nextInt(4);
-            double[] xPoints = new double[sides];
-            double[] yPoints = new double[sides];
-
-            for (int i = 0; i < sides; i++) {
-                double angle = (2 * Math.PI * i) / sides;
-                xPoints[i] = Math.cos(angle) * size/2;
-                yPoints[i] = Math.sin(angle) * size/2;
-            }
-
+            // Simplified debris to avoid array allocations each frame
             gc.setFill(primaryColor);
-            gc.fillPolygon(xPoints, yPoints, sides);
-
-            // Add highlight
-            gc.setStroke(secondaryColor);
-            gc.setLineWidth(1);
-            gc.strokePolygon(xPoints, yPoints, sides);
+            gc.fillRect(-size / 2, -size / 4, size, size / 2);
         }
 
         private void drawEnergySpark(GraphicsContext gc) {
@@ -190,16 +180,11 @@ public class ShipExplosionEffect {
         }
 
         private void drawPlasmaCloud(GraphicsContext gc) {
-            // Create gradient for plasma effect
-            LinearGradient gradient = new LinearGradient(
-                    -size/2, 0, size/2, 0, false, CycleMethod.NO_CYCLE,
-                    new Stop(0, primaryColor.deriveColor(0, 1, 1, 0.3)),
-                    new Stop(0.5, primaryColor.deriveColor(0, 1, 1, 0.7)),
-                    new Stop(1, primaryColor.deriveColor(0, 1, 1, 0.3))
-            );
-
-            gc.setFill(gradient);
+            // Simplified plasma: two overlapping ovals to simulate glow without gradient allocation
+            gc.setFill(primaryColor.deriveColor(0, 1, 1, 0.35));
             gc.fillOval(-size/2, -size/2, size, size);
+            gc.setFill(secondaryColor.deriveColor(0, 1, 1, 0.5));
+            gc.fillOval(-size/3, -size/3, (2*size)/3, (2*size)/3);
         }
 
         private void drawCoreBurst(GraphicsContext gc) {
@@ -299,25 +284,25 @@ public class ShipExplosionEffect {
         particles.add(new ShipExplosionParticle(x, y, ParticleType.CORE_BURST, config));
 
         // Ship debris
-        int debrisCount = (int) (size * 1.5);
+        int debrisCount = Math.min((int) (size * 1.0), MAX_SHIP_DEBRIS);
         for (int i = 0; i < debrisCount; i++) {
             particles.add(new ShipExplosionParticle(x, y, ParticleType.SHIP_DEBRIS, config));
         }
 
         // Energy sparks
-        int sparkCount = (int) (size * 2);
+        int sparkCount = Math.min((int) (size * 1.2), MAX_ENERGY_SPARKS);
         for (int i = 0; i < sparkCount; i++) {
             particles.add(new ShipExplosionParticle(x, y, ParticleType.ENERGY_SPARK, config));
         }
 
         // Plasma clouds
-        int cloudCount = (int) (size * 1.2);
+        int cloudCount = Math.min((int) (size * 0.8), MAX_PLASMA_CLOUDS);
         for (int i = 0; i < cloudCount; i++) {
             particles.add(new ShipExplosionParticle(x, y, ParticleType.PLASMA_CLOUD, config));
         }
 
         // Electric arcs
-        int arcCount = (int) (size * 0.8);
+        int arcCount = Math.min((int) (size * 0.6), MAX_ELECTRIC_ARCS);
         for (int i = 0; i < arcCount; i++) {
             particles.add(new ShipExplosionParticle(x, y, ParticleType.ELECTRIC_ARC, config));
         }
@@ -335,23 +320,42 @@ public class ShipExplosionEffect {
     }
 
     public void draw(GraphicsContext gc) {
-        // Draw in layers for better visual effect
+        // Draw in layers for better visual effect using for-loops (no stream overhead)
+        double canvasW = gc.getCanvas().getWidth();
+        double canvasH = gc.getCanvas().getHeight();
+
         // First plasma clouds
-        particles.stream()
-                .filter(p -> p.type == ParticleType.PLASMA_CLOUD)
-                .forEach(p -> p.draw(gc));
+        for (ShipExplosionParticle p : particles) {
+            if (p.type == ParticleType.PLASMA_CLOUD) {
+                if (p.x + p.size < -OFFSCREEN_MARGIN || p.x - p.size > canvasW + OFFSCREEN_MARGIN ||
+                        p.y + p.size < -OFFSCREEN_MARGIN || p.y - p.size > canvasH + OFFSCREEN_MARGIN) {
+                    continue;
+                }
+                p.draw(gc);
+            }
+        }
 
         // Then debris
-        particles.stream()
-                .filter(p -> p.type == ParticleType.SHIP_DEBRIS)
-                .forEach(p -> p.draw(gc));
+        for (ShipExplosionParticle p : particles) {
+            if (p.type == ParticleType.SHIP_DEBRIS) {
+                if (p.x + p.size < -OFFSCREEN_MARGIN || p.x - p.size > canvasW + OFFSCREEN_MARGIN ||
+                        p.y + p.size < -OFFSCREEN_MARGIN || p.y - p.size > canvasH + OFFSCREEN_MARGIN) {
+                    continue;
+                }
+                p.draw(gc);
+            }
+        }
 
         // Finally energy effects
-        particles.stream()
-                .filter(p -> p.type == ParticleType.ENERGY_SPARK
-                        || p.type == ParticleType.CORE_BURST
-                        || p.type == ParticleType.ELECTRIC_ARC)
-                .forEach(p -> p.draw(gc));
+        for (ShipExplosionParticle p : particles) {
+            if (p.type == ParticleType.ENERGY_SPARK || p.type == ParticleType.CORE_BURST || p.type == ParticleType.ELECTRIC_ARC) {
+                if (p.x + p.size < -OFFSCREEN_MARGIN || p.x - p.size > canvasW + OFFSCREEN_MARGIN ||
+                        p.y + p.size < -OFFSCREEN_MARGIN || p.y - p.size > canvasH + OFFSCREEN_MARGIN) {
+                    continue;
+                }
+                p.draw(gc);
+            }
+        }
     }
 
     public ShipExplosionConfig getConfig() {

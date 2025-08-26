@@ -12,8 +12,8 @@ public class Drone extends Character {
     private Image droneImage;
     private boolean isActive = false;
     private long activationTime;
-    private final long DRONE_DURATION = 5000;
-    private final long BULLET_COOLDOWN = 500;
+    private final long DRONE_DURATION = 7000;
+    private final long BULLET_COOLDOWN = 300;
     private long lastBulletTime = 0;
     private SpriteLoader spriteLoader;
 

@@ -9,6 +9,12 @@ import java.util.List;
 import java.util.Random;
 
 public class ExplosionEffect {
+    // Caps to prevent excessive particle counts on large explosions
+    private static final int MAX_DEBRIS = 28;
+    private static final int MAX_SPARKS = 36;
+    private static final int MAX_SMOKE = 24;
+    // Margin for culling off-screen particles during drawing
+    private static final double OFFSCREEN_MARGIN = 16.0;
     public enum ParticleType {
         DEBRIS, SPARK, SMOKE, CORE
     }
@@ -53,10 +59,10 @@ public class ExplosionEffect {
             };
 
             this.maxLife = switch (type) {
-                case DEBRIS -> 20 + config.random.nextDouble() * 20;
-                case SPARK -> 10 + config.random.nextDouble() * 15;
-                case SMOKE -> 40 + config.random.nextDouble() * 30;
-                case CORE -> 5 + config.random.nextDouble() * 10;
+                case DEBRIS -> 12 + config.random.nextDouble() * 8;
+                case SPARK -> 6 + config.random.nextDouble() * 6;
+                case SMOKE -> 18 + config.random.nextDouble() * 10;
+                case CORE -> 4 + config.random.nextDouble() * 4;
             };
 
             this.life = maxLife;
@@ -115,10 +121,8 @@ public class ExplosionEffect {
 
             switch (type) {
                 case DEBRIS -> {
-                    // Draw angular debris
-                    double[] xPoints = {-size/2, size/2, size/2, -size/2};
-                    double[] yPoints = {-size/4, -size/4, size/4, size/4};
-                    gc.fillPolygon(xPoints, yPoints, 4);
+                    // Simplified debris to avoid array allocations each frame
+                    gc.fillRect(-size / 2, -size / 4, size, size / 2);
                 }
                 case SPARK -> {
                     // Draw glowing spark
@@ -192,20 +196,20 @@ public class ExplosionEffect {
         // Core flash
         particles.add(new ExplosionParticle(x, y, ParticleType.CORE, config));
 
-        // Debris particles
-        int debrisCount = (int) (size * 1.5);
+        // Debris particles (clamped)
+        int debrisCount = Math.min((int) (size * 1.0), MAX_DEBRIS);
         for (int i = 0; i < debrisCount; i++) {
             particles.add(new ExplosionParticle(x, y, ParticleType.DEBRIS, config));
         }
 
-        // Spark particles
-        int sparkCount = (int) (size * 2);
+        // Spark particles (clamped)
+        int sparkCount = Math.min((int) (size * 1.2), MAX_SPARKS);
         for (int i = 0; i < sparkCount; i++) {
             particles.add(new ExplosionParticle(x, y, ParticleType.SPARK, config));
         }
 
-        // Smoke particles
-        int smokeCount = (int) (size * 1.2);
+        // Smoke particles (clamped)
+        int smokeCount = Math.min((int) (size * 0.8), MAX_SMOKE);
         for (int i = 0; i < smokeCount; i++) {
             particles.add(new ExplosionParticle(x, y, ParticleType.SMOKE, config));
         }
@@ -223,21 +227,43 @@ public class ExplosionEffect {
     }
 
     public void draw(GraphicsContext gc) {
-        // Draw particles in layers for better visual effect
+        // Draw particles in layers for better visual effect using for-loops (no stream overhead)
+        double canvasW = gc.getCanvas().getWidth();
+        double canvasH = gc.getCanvas().getHeight();
+
         // First smoke
-        particles.stream()
-                .filter(p -> p.type == ParticleType.SMOKE)
-                .forEach(p -> p.draw(gc));
+        for (ExplosionParticle p : particles) {
+            if (p.type == ParticleType.SMOKE) {
+                // Off-screen culling
+                if (p.x + p.size < -OFFSCREEN_MARGIN || p.x - p.size > canvasW + OFFSCREEN_MARGIN ||
+                        p.y + p.size < -OFFSCREEN_MARGIN || p.y - p.size > canvasH + OFFSCREEN_MARGIN) {
+                    continue;
+                }
+                p.draw(gc);
+            }
+        }
 
         // Then debris
-        particles.stream()
-                .filter(p -> p.type == ParticleType.DEBRIS)
-                .forEach(p -> p.draw(gc));
+        for (ExplosionParticle p : particles) {
+            if (p.type == ParticleType.DEBRIS) {
+                if (p.x + p.size < -OFFSCREEN_MARGIN || p.x - p.size > canvasW + OFFSCREEN_MARGIN ||
+                        p.y + p.size < -OFFSCREEN_MARGIN || p.y - p.size > canvasH + OFFSCREEN_MARGIN) {
+                    continue;
+                }
+                p.draw(gc);
+            }
+        }
 
         // Finally sparks and core for the glow effect
-        particles.stream()
-                .filter(p -> p.type == ParticleType.SPARK || p.type == ParticleType.CORE)
-                .forEach(p -> p.draw(gc));
+        for (ExplosionParticle p : particles) {
+            if (p.type == ParticleType.SPARK || p.type == ParticleType.CORE) {
+                if (p.x + p.size < -OFFSCREEN_MARGIN || p.x - p.size > canvasW + OFFSCREEN_MARGIN ||
+                        p.y + p.size < -OFFSCREEN_MARGIN || p.y - p.size > canvasH + OFFSCREEN_MARGIN) {
+                    continue;
+                }
+                p.draw(gc);
+            }
+        }
     }
 
     public ExplosionConfig getConfig() {

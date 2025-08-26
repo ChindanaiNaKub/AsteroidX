@@ -34,8 +34,8 @@ public class GameEntityManager {
     
     // Frame-based spawning counters
     private int frameCounter = 0;
-    private static final int ASTEROID_SPAWN_FRAMES = 240; // 4 seconds at 60 FPS
-    private static final int ENEMY_SPAWN_FRAMES = 300; // 5 seconds at 60 FPS
+    private static final int ASTEROID_SPAWN_FRAMES = 120; // 2 seconds at 60 FPS
+    private static final int ENEMY_SPAWN_FRAMES = 180; // 3 seconds at 60 FPS
 
     private static final double SMALL_ASTEROID_SIZE = 20;
     private static final double MEDIUM_ASTEROID_SIZE = 40;

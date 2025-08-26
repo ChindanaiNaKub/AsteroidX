@@ -14,13 +14,13 @@ public class PlayerShip extends Character {
     private double angle;
     private double velocityX = 0;
     private double velocityY = 0;
-    final double MAX_SPEED = 5.0;
-    private final double THRUST = 0.05;  // Power of thrust
+    final double MAX_SPEED = 7.5;
+    private final double THRUST = 0.08;  // Power of thrust
     private final double DECELERATION = 0.98;  // Friction to slow down over time
     private boolean isThrusting = false;  // Track if the ship is thrusting
     private Image shipImage;
     private long lastBulletTime = 0;
-    private final long bulletCooldown = 300;
+    private final long bulletCooldown = 150;
     private SpriteLoader spriteLoader;
     private String bulletMode = "default";
     private static List<Bullet> bullets = new ArrayList<>();
